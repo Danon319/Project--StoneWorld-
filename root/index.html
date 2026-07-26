@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ПРАВИЛА СБОРКИ — ДОКУМЕНТАЦИЯ ЦЕХА, В ТИЛЬДУ НЕ ЕДЕТ
+     ═══════════════════════════════════════════════════════════════════════════
+
+     Общие правила:
+     - сброса стилей в проекте нет и не будет; каждый элемент секции задаёт свои
+       margin, padding, list-style, text-decoration явно, через собственный класс sw-*;
+     - var() всегда со вторым аргументом, значения фолбэков — из design_system.md
+       раздел 2, без отсебятины;
+     - в @media — литеральные px, var() там не работает;
+     - общего класса контейнера нет, контейнер описывается внутри каждой секции.
+
+     Правила работы со SplitText (действуют во всех секциях):
+     - сплит применяется только к тексту внутри секции; и целевой элемент, и все
+       сгенерированные плагином узлы остаются внутри её контейнера;
+     - имена сгенерированных классов задаются явно через linesClass / wordsClass /
+       charsClass с префиксом секции (sw-header__nav-char). Дефолтные имена плагина
+       не использовать: они не под нашим контролем и не проходят правило именования;
+     - секция перед вызовом проверяет window.gsap и window.SplitText и тихо ничего
+       не делает, если их нет;
+     - сплит по строкам запускается после готовности шрифта (document.fonts.ready)
+       либо с autoSplit: true. При font-display: swap строки, посчитанные на
+       фолбэк-шрифте, разъедутся в момент подмены на Inter;
+     - на интерактивных элементах (<a>, <button>) параметр aria задаётся явно,
+       дефолт не оставлять;
+     - обработчики событий вешаются на сам <a>, а не на сгенерированные узлы:
+       при ре-сплите узлы пересоздаются и слушатели на них умирают;
+     - hover-эффекты живут только под (hover: hover) и (min-width: 769px)
+       в gsap.matchMedia(); при prefers-reduced-motion: reduce сплит не запускается.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ЗОНА A — HEAD САЙТА — начало
+     Едет в «Настройки сайта → Ещё → HTML-код внутрь head». Один раз на весь сайт.
+     Reset, normalize, правила по body или * в этой зоне запрещены.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- A.1 — шрифт.
+     Inter подключается настройками сайта Тильды (Шрифты и цвета → Расширенные
+     настройки), имя семейства — Inter. @font-face здесь не объявляется.
+     Связь секций с этим объявлением — только по имени семейства: первое имя
+     в --sw-font-family посимвольно совпадает с названием шрифта в Тильде.
+     Разойдутся — все секции молча уедут на системный фолбэк. -->
+
+<!-- A.2 — токены дизайн-системы. -->
+<style>
+/* стиль — head сайта: токены --sw-* (design_system.md р.2, значения дословно) */
+:root {
+
+  /* ─── цвет (2.1) ─── */
+  --sw-color-bg-page: #F4F5F5;
+  --sw-color-bg-section: #FFFFFF;
+  --sw-color-surface-muted: #EBEBEB;
+  --sw-color-border: #E6E6E6;
+  --sw-color-border-strong: #C5C5C5;
+  --sw-color-text: #242424;
+  --sw-color-text-muted: #8F8F8F;
+  --sw-color-text-prefill: #D3D3D3;
+  --sw-color-text-on-cta: #FFFFFF;
+  --sw-color-cta: #242424;
+  --sw-color-cta-hover: #0D0D0D;
+  --sw-color-accent: #E8D5C4;
+  --sw-color-accent-hover: #D6C1AE;
+  --sw-color-link-hover: #A68A73;
+  --sw-color-focus: #242424;
+  --sw-color-focus-on-dark: #FFFFFF;
+
+  /* ─── цвет: бренд-цвета каналов связи (2.1) ───
+     Фирменные цвета сторонних сервисов. Гамме VIS-1 не подчиняются и в
+     оформлении секций не участвуют: применяются только в заливке активного
+     состояния круглых плашек каналов связи — GlobalHeader (SEC-2) и Footer
+     (SEC-10). Исключение зафиксировано в design_system.md раздел 11.
+     Заливка MAX — не линейный градиент, а четырёхугловой mesh: базовый цвет
+     плюс три радиальных слоя от углов, прозрачность слоёв через rgba() того же
+     цвета, не ключевым словом transparent. */
+  --sw-color-vk: #0077FE;
+  --sw-color-max-base: #7333E7;
+  --sw-color-max-bl: #44CCFF;
+  --sw-color-max-tl: #274EBD;
+  --sw-color-max-tr: #9933DD;
+  --sw-color-phone-from: #00944D;
+  --sw-color-phone-to: #1FED56;
+
+  /* ─── типографика: размеры (2.2) ─── */
+  --sw-fs-display: clamp(2.5rem, 5vw, 3.5rem);
+  --sw-fs-h2: clamp(1.75rem, 3vw, 2rem);
+  --sw-fs-h3: clamp(1.25rem, 2vw, 1.5rem);
+  --sw-fs-body-lg: 1.125rem;
+  --sw-fs-body: 1rem;
+  --sw-fs-sm: 0.875rem;
+  --sw-fs-xs: 0.75rem;
+
+  /* ─── типографика: начертания (2.2) ─── */
+  --sw-fw-light: 300;
+  --sw-fw-regular: 400;
+  --sw-fw-medium: 500;
+  --sw-fw-semibold: 600;
+
+  /* ─── типографика: интерлиньяж (2.2) ─── */
+  --sw-lh-tight: 1.15;
+  --sw-lh-heading: 1.25;
+  --sw-lh-body: 1.6;
+  --sw-lh-sm: 1.5;
+
+  /* ─── типографика: трекинг (2.2) ─── */
+  --sw-ls-tight: -0.02em;
+  --sw-ls-normal: 0;
+  --sw-ls-wide: 0.08em;
+
+  /* ─── отступы (2.3) ─── */
+  --sw-space-4: 4px;
+  --sw-space-8: 8px;
+  --sw-space-12: 12px;
+  --sw-space-16: 16px;
+  --sw-space-24: 24px;
+  --sw-space-32: 32px;
+  --sw-space-48: 48px;
+  --sw-space-64: 64px;
+  --sw-space-96: 96px;
+  --sw-space-128: 128px;
+
+  /* ─── радиусы (2.4) ─── */
+  /* lg меняется ступенями, не клампом: 46 / 26 / 14. Здесь верхняя ступень,
+     две нижние — медиазапросами сразу под этим блоком. Остальные три радиуса
+     фиксированные на всех ширинах. */
+  --sw-radius-sm: 8px;
+  --sw-radius-md: 16px;
+  --sw-radius-lg: 46px;
+  --sw-radius-pill: 999px;
+
+  /* ─── тени (2.5) ─── */
+  --sw-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --sw-shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  --sw-shadow-lg: 0 12px 32px rgba(0,0,0,0.10);
+
+  /* ─── тайминги и easing (2.6) ─── */
+  --sw-dur-fast: 150ms;
+  --sw-dur-base: 250ms;
+  --sw-dur-slow: 400ms;
+  --sw-dur-entrance: 700ms;
+  --sw-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --sw-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --sw-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ─── брейкпоинты (2.7) ───
+     СПРАВОЧНЫЕ КОНСТАНТЫ. В @media не подставляются: var() внутри условия
+     медиазапроса не работает. В @media пишутся литеральные px. */
+  --sw-bp-md: 768px;
+  --sw-bp-lg: 1024px;
+  --sw-bp-xl: 1440px;
+
+  /* ─── z-index (2.8) ─── */
+  --sw-z-base: 0;
+  --sw-z-raised: 10;
+  --sw-z-sticky: 100;
+  --sw-z-dropdown: 200;
+  --sw-z-overlay: 900;
+
+  /* ─── семейство шрифта (р.4) ─── */
+  --sw-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+}
+
+/* стиль — head сайта: ступени --sw-radius-lg (design_system.md 2.4).
+   Переключение рваное, не клампом: 46 при >1024, 26 при ≤1024, 14 при ≤375.
+   Порядок блоков обязателен: на 375 верны оба медиазапроса, и решает
+   последний. Селектор один и тот же :root — правило объявляет только
+   переменную и ни одного элемента страницы Тильды не оформляет.
+   Обе границы записаны как max-width, поэтому пишутся 1024 и 375 —
+   это те же «включительно», что в брифе.
+   1024 — это --sw-bp-lg из 2.7, уже объявленный брейкпоинт проекта.
+   К метрической границе 768 и к композиционной 1200 отношения не имеет:
+   радиус переключается сам по себе и состав панели не трогает. */
+@media (max-width: 1024px) {
+  :root { --sw-radius-lg: 26px; }
+}
+
+@media (max-width: 375px) {
+  :root { --sw-radius-lg: 14px; }
+}
+</style>
+
+<!-- A.3 — библиотеки с CDN. Версия пинится полностью, до патча.
+     Порядок строгий: core первым, плагины после него.
+     defer/async не ставить: с defer выполнение откладывается до конца парсинга,
+     и инлайновый блок инициализации из зоны C отработает раньше библиотек —
+     window.gsap окажется undefined. -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js"></script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ЗОНА A — HEAD САЙТА — конец
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ЛЕСА ЦЕХА — В ТИЛЬДУ НЕ ЕДЕТ — начало
+     Стоят в head сразу после зоны A, а не в конце документа. Две причины:
+     1) [data-sw-scaffold] имеет специфичность 0,1,0 — ту же, что .sw-hero.
+        При равной специфичности решает порядок. Выше зоны B правило секции
+        побеждает, и забытый при сборке атрибут остаётся безвредным;
+     2) в продакшене Тильда объявляет шрифт в head. Правило SplitText завязано
+        на document.fonts.ready — объявление ниже скриптов развело бы тайминги
+        цеха и продакшена ровно там, ради чего правило и написано.
+     Секция не имеет права рассчитывать ни на одно правило из этой зоны.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<title>Цех StoneWorld</title>
+<style>
+/* ЛЕСА: шрифт цеха.
+   Воспроизводит объявление, которое в продакшене делает Тильда, — чтобы цех
+   и продакшен рендерили одинаково. Путь относительный: леса в Тильду не едут,
+   запрет на относительные пути здесь не действует.
+   Файл вариативный (fvar/gvar/avar/HVAR/MVAR/STAT на месте), ось wght 100–900 —
+   диапазон объявлен фактический, синтеза начертаний не происходит.
+   Через file:// Chrome шрифт не загрузит (opaque origin) — цех открывать
+   локальным HTTP-сервером. */
+@font-face {
+  font-family: 'Inter';
+  src: url('../Design_system/Fonts/Inter-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ЛЕСА: единственное глобальное правило во всём файле. Обосновано тем, что
+   в Тильде так уже есть, а фон страницы там задаётся в настройках страницы,
+   не кодом. */
+body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
+
+/* ЛЕСА: высота пустых контейнеров, чтобы страница скроллилась и было видно,
+   как фиксированный GlobalHeader проезжает над секциями.
+   Атрибут снимается при сборке каждой секции. */
+[data-sw-scaffold] { min-height: 60vh; }
+
+/* ЛЕСА: заглушка не красит свой фон белым.
+   Фон страницы задан выше и равен --sw-color-bg-page, но за панелью его не видно:
+   несобранная секция под ней заливает свою площадь --sw-color-bg-section (#FFFFFF)
+   на всю растяжку 60vh. Панель тоже белая — боковые зазоры в цехе не читаются,
+   и плавающей панель не выглядит. В продакшене вопроса нет: у Hero будет
+   собственный фон (PRD 9).
+   Единственное место в файле, где леса намеренно перебивают правило секции.
+   Без !important не обойтись: [data-sw-scaffold] и .sw-hero имеют одну
+   специфичность, а леса стоят выше зоны B и при равенстве проигрывают.
+   Действует только на несобранные заглушки: при сборке секции атрибут снимается
+   вместе с растяжкой, и секция начинает красить свой фон сама. */
+[data-sw-scaffold] { background: var(--sw-color-bg-page, #F4F5F5) !important; }
+</style>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ЛЕСА ЦЕХА — В ТИЛЬДУ НЕ ЕДЕТ — конец
+     ═══════════════════════════════════════════════════════════════════════════ -->
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ЗОНА B — СЕКЦИИ — начало
+     Каждая секция = один блок T123 (<style> + разметка вместе).
+     Текст баннера копируется в T218 «Системный комментарий» дословно.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- ═══════ T123 · СЕКЦИЯ: GlobalHeader (SEC-2) — начало ═══════ -->
+<style>
+/* стиль — секция GlobalHeader */
+
+/* box-sizing — посекционно, первой строкой. Потомковый * не выходит за контейнер. */
+.sw-header,
+.sw-header *,
+.sw-header *::before,
+.sw-header *::after { box-sizing: border-box; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ДВЕ ГРАНИЦЫ, ПРИРОДА РАЗНАЯ, СМЕШИВАТЬ НЕЛЬЗЯ.
+   768 — метрическая: ≤768 значения фиксированы, ≥769 клампятся. К ней же
+   привязаны автоскрытие (≤768 панель не уезжает), тач-минимум 44px, а также
+   состав левой части панели: ≤768 меню скрыто и стоит бургер, ≥769 наоборот.
+   1200 — композиционная, действует только внутри SEC-2 и только в правой
+   зоне: с неё появляются текстовый номер и вторичная ссылка, а плашка
+   телефона уходит из пилюли. Меню и бургер к этой границе отношения не имеют.
+   var() в @media не работает — границы литеральные.
+
+   Состав по диапазонам:
+   ≤768        логотип + пилюля из трёх плашек + бургер;
+   769–1199    логотип + меню + пилюля из трёх плашек;
+   ≥1200       логотип + меню + блок номера + пилюля из двух плашек.
+
+   АНКЕРЫ КЛАМПОВ. Элемент, живущий на всех ширинах, клампится от 768
+   (логотип, высота панели, зазоры от краёв, плашки). Элемент, появляющийся
+   на 769, клампится от 769 (кегль пункта меню, зазоры вокруг меню). Элемент,
+   появляющийся на 1200, клампится от 1200 (кегли номера и вторичной ссылки,
+   зазор «номер ↔ пилюля»). Анкер — это ширина, на которой значение равно
+   нижней границе клампа; смешивать анкеры в одном диапазоне нельзя, иначе
+   рампа стартует не с той величины и состав перестаёт помещаться.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Контейнер секции. Фиксирован нашим CSS (у T123 настройки «зафиксировать блок»
+   нет), слой --sw-z-sticky. Сам прозрачен и кликов не перехватывает: зазоры
+   вокруг панели иначе перекрыли бы соседнюю секцию. Клики принимает только панель.
+   padding контейнера и есть зазоры от краёв вьюпорта: верх / бока / низ. */
+.sw-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--sw-z-sticky, 100);
+  padding: 0 15px 8px;
+  font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  font-size: var(--sw-fs-body, 1rem);
+  line-height: var(--sw-lh-body, 1.6);
+  color: var(--sw-color-text, #242424);
+  pointer-events: none;
+}
+
+/* Панель: скруглена снизу, обводка 1px, тени нет.
+   Раскладка здесь описана для компактного состава — флекс-строка: логотип,
+   контакты, прижатые auto-полем, бургер. С 769 состав другой и раскладка
+   другая, грид: см. блок «769px и выше».
+   Радиус рваный, три ступени: 46 / 26 / 14, границы 1024 и 375. Сами ступени
+   объявлены токеном в ЗОНЕ A, здесь важен фолбэк — он ступенями не выражается,
+   поэтому у каждой ступени свой: 46 здесь, 26 в блоке ≤1024, 14 в блоке ≤375.
+   Уедет секция в Тильду раньше токенов — радиус всё равно будет верным на всех
+   ширинах. Три блока радиуса повторяют структуру объявления токена один в один
+   (базовое правило плюс два max-width): при любом другом раскладе на дробных
+   ширинах от масштабирования фолбэк и токен разошлись бы.
+   Вход и автоскрытие — разные по природе движения, значения не общие:
+   вход односторонний, поэтому --sw-dur-entrance и --sw-ease-out (design_system 2.6:
+   эта кривая держится именно под появление элементов);
+   автоскрытие двустороннее — там остаются --sw-dur-slow и --sw-ease-in-out.
+   Вход — @keyframes без fill: forwards, иначе залитый анимацией transform
+   перебил бы transition автоскрытия. */
+.sw-header__bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 72px;
+  padding: 0 clamp(16px, 3.56vw + 2.64px, 30px);
+  background: var(--sw-color-bg-section, #FFFFFF);
+  border: 1px solid var(--sw-color-bg-page, #F4F5F5);
+  border-radius: 0 0 var(--sw-radius-lg, 46px) var(--sw-radius-lg, 46px);
+  pointer-events: auto;
+  transition: transform var(--sw-dur-slow, 400ms) var(--sw-ease-in-out, cubic-bezier(0.65, 0, 0.35, 1));
+  animation: sw-header-slide-in var(--sw-dur-entrance, 700ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.sw-header__bar--hidden { transform: translateY(-100%); }
+
+/* Снимает вход, когда страница открылась уже прокрученной: браузер восстанавливает
+   позицию скролла, и панель проигрывала бы выезд сверху на глубине в тысячи
+   пикселей. Класс ставит поведение секции; панель при этом остаётся видимой. */
+.sw-header__bar--no-entrance { animation: none; }
+
+@keyframes sw-header-slide-in { from { transform: translateY(-100%); } }
+
+/* ─── логотип ─── */
+/* max-width + object-fit: contain — предохранитель: логотип уменьшается сам,
+   сохраняя пропорцию, вместо того чтобы вытолкнуть соседей за пределы панели
+   и дать горизонтальный скролл всей странице Тильды.
+   Срабатывает в двух местах, и оба — крайние: ниже ~345px в компактном
+   составе и на ≥769, если набор меню окажется шире, чем остаток ширины
+   (замер на 769: остаток держит рост набора до +10%, дальше ужимается логотип).
+   В штатных ширинах не участвует. flex-shrink работает только в компактном
+   составе; с 769 ту же роль играет колонка auto в гриде панели. */
+.sw-header__logo {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  text-decoration: none;
+}
+
+.sw-header__logo-img {
+  display: block;
+  height: 40px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* ─── меню ─── */
+/* В панели с 769. Ниже навигация уходит под бургер (Mobile_menu, SEC-14).
+   Сжиматься меню не имеет права: при сжатии контейнер уезжает под содержимое,
+   пункты наползают на контакты, а обрезка по overflow строки съедает буквы.
+   Отказ должен быть видимым, а не тихим. Ниже 769 запрет держит flex: 0 0 auto,
+   с 769 — колонка auto в гриде панели: она не опускается ниже min-content. */
+.sw-header__nav {
+  display: none;
+  flex: 0 0 auto;
+}
+
+/* Зазор между пунктами. Анкер 769 — меню существует с этой ширины.
+   Проверка: 769 → 12,0; 2560 → 80,0. */
+.sw-header__nav-list {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  column-gap: clamp(12px, 3.797vw - 17.2px, 80px);
+}
+
+.sw-header__nav-item {
+  margin: 0;
+  padding: 0;
+}
+
+/* overflow: hidden обрезает обе копии текста по границам строки.
+   Высота ссылки равна интерлиньяжу — символ уходит за край ровно на строку.
+   Кегль: анкер 769, проверка 769 → 14,0; 2560 → 27,0. 16px набирается около
+   900px — на ширинах, где пункт уже не соседствует с блоком номера. */
+.sw-header__nav-link {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  color: var(--sw-color-text, #242424);
+  font-size: clamp(14px, 0.726vw + 8.42px, 32px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-heading, 1.25);
+  letter-spacing: var(--sw-ls-normal, 0);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* Две копии текста: верхняя в потоке, нижняя над ней и смещена на строку вниз.
+   Классов на карте брифа нет — двумя копиями карта не выражается.
+   Ширина строки задаётся верхней копией и в обоих состояниях одинаковая. */
+.sw-header__nav-text {
+  display: block;
+}
+
+.sw-header__nav-text--alt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--sw-color-link-hover, #A68A73);
+  transform: translateY(100%);
+}
+
+/* Класс сгенерированных SplitText узлов. Имя задаётся явно через charsClass. */
+.sw-header__nav-char {
+  display: inline-block;
+}
+
+/* ─── правая зона ─── */
+/* margin-left: auto прижимает контакты вправо только в компактном составе,
+   где панель — флекс-строка. С 769 прижатие делает раскладка панели
+   (последняя колонка грида), и margin снимается. */
+.sw-header__contacts {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* Номер и вторичная ссылка — две строки друг под другом. В панели с 1200.
+   Сжиматься правая зона не имеет права: при сжатии обе строки переносятся,
+   номер встаёт в три строки и вылезает за высоту панели. Отказ по ширине
+   должен быть видимым, как и у меню. */
+.sw-header__contact-block {
+  display: none;
+  flex: 0 0 auto;
+}
+
+/* Номер на десктопе набор не инициирует — копирует себя в буфер, поэтому button,
+   а не ссылка tel:. Стили UA-кнопки снимаются явно: сброса в проекте нет.
+   Кегль клампится наравне с остальной панелью, токеном не покрыт. */
+.sw-header__contact {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sw-color-text, #242424);
+  font-family: inherit;
+  font-size: clamp(20px, 1.324vw + 4.12px, 38px);
+  white-space: nowrap;
+  font-weight: var(--sw-fw-medium, 500);
+  line-height: var(--sw-lh-heading, 1.25);
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-header__callback {
+  display: inline-block;
+  padding: 0;
+  color: var(--sw-color-text-muted, #8F8F8F);
+  font-size: clamp(14px, 0.441vw + 8.71px, 20px);
+  font-weight: var(--sw-fw-medium, 500);
+  line-height: var(--sw-lh-sm, 1.5);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+  transition: color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* ─── пилюля и плашки каналов связи ─── */
+/* Габарит пилюли не задаётся числом, а выводится из padding 5 + gap 5:
+   2 плашки по 70 → 155×80, 3 плашки по 44 → 152×54. */
+.sw-header__pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px;
+  background: var(--sw-color-bg-page, #F4F5F5);
+  border-radius: var(--sw-radius-pill, 999px);
+}
+
+.sw-header__plate {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  background: var(--sw-color-bg-section, #FFFFFF);
+  border-radius: 50%;
+  text-decoration: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/* Заливка активного состояния — отдельным слоем: градиенты между собой
+   не интерполируются, opacity интерполируется. Анимируется только opacity. */
+.sw-header__plate::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-header__plate--vk::before {
+  background: var(--sw-color-vk, #0077FE);
+}
+
+.sw-header__plate--phone::before {
+  background: linear-gradient(to top, var(--sw-color-phone-from, #00944D), var(--sw-color-phone-to, #1FED56));
+}
+
+/* Mesh MAX: база + три радиальных слоя от углов. Затухание — rgba() того же
+   цвета с alpha 0, не ключевым словом transparent: иначе на стыках серый ореол.
+   Якоря подтянуты внутрь на 15%: плашка круглая, углы квадрата обрезаны.
+   Радиусы пятен подобраны на глаз, проверяются только визуально. */
+.sw-header__plate--max::before {
+  background-color: var(--sw-color-max-base, #7333E7);
+  background-image:
+    radial-gradient(circle at 15% 85%, var(--sw-color-max-bl, #44CCFF) 0%, rgba(68, 204, 255, 0) 62%),
+    radial-gradient(circle at 15% 15%, var(--sw-color-max-tl, #274EBD) 0%, rgba(39, 78, 189, 0) 60%),
+    radial-gradient(circle at 85% 15%, var(--sw-color-max-tr, #9933DD) 0%, rgba(153, 51, 221, 0) 64%);
+}
+
+/* Оба глифа лежат в разметке и переключаются прозрачностью: по событию не
+   подгружаются, иначе первое наведение даст пустой кадр. */
+.sw-header__plate-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  transition: opacity var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-header__plate-icon--active { opacity: 0; }
+
+/* ─── бургер ─── */
+/* Кнопка отдаёт только разметку с data-sw-menu-trigger и своим aria-expanded.
+   Слушатель вешает Mobile_menu (SEC-14), контракт PRD 10.3 — предмет контракта
+   ровно одно имя атрибута. Отсутствие меню на странице шапку не ломает. */
+.sw-header__burger {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  margin: 0 0 0 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: var(--sw-color-cta, #242424);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-header__burger-line {
+  display: block;
+  width: 25px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--sw-color-text-on-cta);
+  transition: background-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* ─── статус копирования номера ─── */
+/* Визуально ничего не появляется: брифовое «без визуального подтверждения» в силе.
+   Регион лежит в разметке с самого начала — добавленный по клику часто не
+   озвучивается. Скрытие клип-паттерном: display: none и visibility: hidden
+   выключили бы и чтение. */
+.sw-header__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ─── фокус ─── */
+/* Общая обводка на всех интерактивных элементах секции. Смещение 3px уводит
+   кольцо на светлую панель — на тёмной плашке бургера оно иначе не видно. */
+.sw-header__logo:focus-visible,
+.sw-header__nav-link:focus-visible,
+.sw-header__contact:focus-visible,
+.sw-header__callback:focus-visible,
+.sw-header__plate:focus-visible,
+.sw-header__burger:focus-visible {
+  outline: 2px solid var(--sw-color-focus, #242424);
+  outline-offset: 3px;
+}
+
+/* ─── hover ─── */
+/* Только под (hover: hover): на тач-устройстве состояние иначе залипает. */
+@media (hover: hover) {
+  .sw-header__contact--phone:hover,
+  .sw-header__callback:hover { color: var(--sw-color-link-hover, #A68A73); }
+
+  .sw-header__plate:hover::before { opacity: 1; }
+  .sw-header__plate:hover .sw-header__plate-icon { opacity: 0; }
+  .sw-header__plate:hover .sw-header__plate-icon--active { opacity: 1; }
+
+  .sw-header__burger:hover { background: var(--sw-color-bg-page, #F4F5F5); }
+  .sw-header__burger:hover .sw-header__burger-line { background: var(--sw-color-text, #242424); }
+}
+
+/* ─── active ─── */
+/* Без условия (hover: hover): смена состояния плашки несёт смысл, на телефоне
+   нажатие обязано давать отклик. На iOS Safari :active не срабатывает без
+   слушателя касания на самом элементе — он вешается в поведении секции. */
+.sw-header__plate:active::before { opacity: 1; }
+.sw-header__plate:active .sw-header__plate-icon { opacity: 0; }
+.sw-header__plate:active .sw-header__plate-icon--active { opacity: 1; }
+
+/* ─── 769px и выше: метрики клампятся, в панель приходит меню ─── */
+@media (min-width: 769px) {
+  .sw-header {
+    padding: 0 clamp(15px, 1.396vw + 4.26px, 40px) clamp(8px, 1.787vw - 5.74px, 40px);
+  }
+
+  /* РАСКЛАДКА ПАНЕЛИ. Пять колонок: логотип, зазор «логотип → меню», меню,
+     зазор «меню → контакты», контакты. Зазоры — пустые колонки грида, а не
+     column-gap: флекс-строка и грид раздают один column-gap на обе границы
+     сразу, а здесь границы разные, и на второй такой довесок вытолкнул бы
+     состав за панель (замер на 2560: 280 пришло бы вторым слоем поверх пола
+     300, сумма 2460,6 при контейнере 2298,0 — перебор 163px). Пустая колонка
+     задаёт ровно одну границу и элемента-распорки не требует.
+     Контакты стоят в последней колонке — то есть прижаты к внутреннему краю
+     панели на любой ширине. Бургер на этих ширинах display: none и в раскладке
+     не участвует; статус копирования выведен из потока и колонки не занимает.
+
+     ЗАЗОРЫ. Сумма явных значений с шириной контейнера не сходится ни на одной
+     ширине — остаток обязан лежать на одной из двух границ, и на какой именно,
+     решает композиция. Остаток отдан левой границе:
+
+     «Логотип → меню» — minmax(28 → 280, 1fr), анкер 769 (меню существует
+     с 769). Кламп здесь гарантированный минимум, поверх которого ложится весь
+     остаток ширины. Фактическое значение поэтому больше клампа: замер 60,7
+     на 769, 123,7 на 1200, 397,4 на 2560.
+     Зазор между пунктами 12 → 80 (он в .sw-header__nav-list) — тот же анкер.
+     «Меню → контакты» — 32 → 300, анкер 1200. Значение точное: колонка
+     фиксированная, остаток в неё не попадает, на 2560 это ровно 300.
+     Анкер 1200, а не 769: на 1200 в панель приходит блок номера, а пилюля
+     отдаёт только одну плашку из трёх — свободного места там резко меньше,
+     чем на 1199. Прямая, натянутая от 769, дала бы на 1200 порядка 96 при
+     физически доступных 99 и рвала бы панель на первом же промахе замера.
+
+     Отказ по ширине приходит в колонку 1fr: она садится на свой минимум,
+     дальше ужимается логотип. Запас до этого — те самые 117px на 2560,
+     32,7 на 769 и 35,1 на 1200. */
+  .sw-header__bar {
+    display: grid;
+    grid-template-columns:
+      auto
+      minmax(clamp(28px, 14.07vw - 80.2px, 280px), 1fr)
+      auto
+      clamp(32px, 19.706vw - 204.47px, 300px)
+      auto;
+    height: clamp(72px, 4.355vw + 38.51px, 150px);
+    padding: 0 clamp(30px, 3.35vw + 4.24px, 90px);
+  }
+
+  .sw-header__logo { grid-column: 1; }
+
+  .sw-header__nav {
+    display: block;
+    grid-column: 3;
+  }
+
+  .sw-header__contacts {
+    grid-column: 5;
+    margin-left: 0;
+  }
+
+  /* Бургер живёт только в компактном составе: с 769 его работу делает меню. */
+  .sw-header__burger { display: none; }
+
+  /* Анкер логотипа — 768, а не 769: логотип живёт на всех ширинах, в отличие
+     от текста и зазоров вокруг меню. Проверка: 768 → 40,0; 2560 → 90,0.
+     Высота задаётся, ширина считается по пропорции 738:358 — на 2560 это
+     185,5. Пропорцию не трогать: 170×90 сплющило бы логотип на 9%. */
+  .sw-header__logo-img { height: clamp(40px, 2.79vw + 18.57px, 90px); }
+
+  .sw-header__plate {
+    width: clamp(44px, 1.452vw + 32.84px, 70px);
+    height: clamp(44px, 1.452vw + 32.84px, 70px);
+  }
+
+  .sw-header__plate-icon {
+    width: clamp(22px, 0.726vw + 16.42px, 35px);
+    height: clamp(22px, 0.726vw + 16.42px, 35px);
+  }
+}
+
+/* ─── 1200px и выше: правая зона в полном составе ─── */
+/* На этой границе переключается только правая зона: приходят текстовый номер
+   и вторичная ссылка, плашка телефона уходит из пилюли. Меню и бургер сюда
+   не относятся — они переключаются на 768/769.
+   Габарит пилюли пересчитывается сам из padding 5 + gap 5: три плашки → 152×54
+   на 769, две → 155×80 на 2560. Числом он не задан нигде.
+   Зазор «номер ↔ пилюля» и кегли номера со вторичной ссылкой привязаны к 1200:
+   этих элементов ниже 1200 нет, и анкер 769 дал бы им рампу от несуществующего
+   состояния. */
+@media (min-width: 1200px) {
+  .sw-header__contacts {
+    column-gap: clamp(24px, 4.118vw - 25.41px, 80px);
+  }
+
+  .sw-header__contact-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Телефон при полном составе — текстом в правой зоне, плашка из пилюли уходит. */
+  .sw-header__plate--phone { display: none; }
+}
+
+/* ─── 1024px и ниже: средняя ступень радиуса ─── */
+/* Оба блока ниже — про радиус и только про радиус: состав, метрики и раскладка
+   на 1024 и 375 не меняются. Границы взяты из объявления токена в ЗОНЕ A и
+   повторяют его форму: базовое правило плюс два max-width в том же порядке.
+   Стоят после блоков min-width намеренно — среди медиазапросов порядок
+   безразличен (диапазоны не пересекаются), но базовое правило панели обязано
+   быть выше, иначе при равной специфичности победит оно. А вот между собой
+   эти два блока порядок имеют: на 375 верны оба, и решает последний. */
+@media (max-width: 1024px) {
+  .sw-header__bar {
+    border-radius: 0 0 var(--sw-radius-lg, 26px) var(--sw-radius-lg, 26px);
+  }
+}
+
+/* ─── 375px и ниже: нижняя ступень радиуса ─── */
+@media (max-width: 375px) {
+  .sw-header__bar {
+    border-radius: 0 0 var(--sw-radius-lg, 14px) var(--sw-radius-lg, 14px);
+  }
+}
+
+/* ─── prefers-reduced-motion ─── */
+/* Движения нет ни на входе, ни при скролле, ни в сменах состояний.
+   Содержимое читаемо сразу. Автоскрытие глушится ещё и в поведении секции. */
+@media (prefers-reduced-motion: reduce) {
+  .sw-header__bar {
+    animation: none;
+    transition: none;
+  }
+
+  .sw-header__plate::before,
+  .sw-header__plate-icon,
+  .sw-header__contact,
+  .sw-header__callback,
+  .sw-header__burger,
+  .sw-header__burger-line { transition: none; }
+}
+</style>
+<!-- разметка — секция GlobalHeader -->
+<header class="sw-header" id="sw-header">
+  <div class="sw-header__bar">
+
+    <!-- Логотип: ссылка-якорь наверх, заголовочным тегом не является.
+         alt пустой — доступное имя ссылки несёт aria-label, иначе имя
+         объявится дважды. Название компании для клиента — «Каменный мир». -->
+    <a class="sw-header__logo" href="#sw-header" aria-label="Логотип «Каменный мир»">
+      <img class="sw-header__logo-img"
+           src="https://static.tildacdn.com/tild3730-6665-4330-b664-346534636566/logo_StoneWorld.svg"
+           alt="" width="738" height="358">
+    </a>
+
+    <!-- Меню: 5 пунктов, разделителей и подменю нет.
+         Две копии текста на пункт — верхняя видна в покое, нижняя приходит
+         снизу при наведении (text-roll). Обе aria-hidden, доступное имя
+         ссылки задано явно: при сплите содержимое переписывается. -->
+    <nav class="sw-header__nav" aria-label="Основная навигация">
+      <ul class="sw-header__nav-list">
+        <li class="sw-header__nav-item">
+          <a class="sw-header__nav-link" href="#sw-catalog" aria-label="Каталог">
+            <span class="sw-header__nav-text" aria-hidden="true">Каталог</span>
+            <span class="sw-header__nav-text sw-header__nav-text--alt" aria-hidden="true">Каталог</span>
+          </a>
+        </li>
+        <li class="sw-header__nav-item">
+          <a class="sw-header__nav-link" href="#sw-portfolio" aria-label="Портфолио">
+            <span class="sw-header__nav-text" aria-hidden="true">Портфолио</span>
+            <span class="sw-header__nav-text sw-header__nav-text--alt" aria-hidden="true">Портфолио</span>
+          </a>
+        </li>
+        <!-- Подпись пункта короче названия секции: ведёт на SEC-7 «Этапы
+             реализации», якорь и имя секции не меняются. В Mobile_menu (SEC-14)
+             подпись обязана быть посимвольно такой же. -->
+        <li class="sw-header__nav-item">
+          <a class="sw-header__nav-link" href="#sw-steps" aria-label="Реализация">
+            <span class="sw-header__nav-text" aria-hidden="true">Реализация</span>
+            <span class="sw-header__nav-text sw-header__nav-text--alt" aria-hidden="true">Реализация</span>
+          </a>
+        </li>
+        <li class="sw-header__nav-item">
+          <a class="sw-header__nav-link" href="#sw-video" aria-label="Видео">
+            <span class="sw-header__nav-text" aria-hidden="true">Видео</span>
+            <span class="sw-header__nav-text sw-header__nav-text--alt" aria-hidden="true">Видео</span>
+          </a>
+        </li>
+        <li class="sw-header__nav-item">
+          <a class="sw-header__nav-link" href="#sw-form" aria-label="Заявка">
+            <span class="sw-header__nav-text" aria-hidden="true">Заявка</span>
+            <span class="sw-header__nav-text sw-header__nav-text--alt" aria-hidden="true">Заявка</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sw-header__contacts">
+
+      <div class="sw-header__contact-block">
+        <!-- ANL: имя цели не назначено -->
+        <button class="sw-header__contact sw-header__contact--phone" type="button">+7 964 938 73 92</button>
+
+        <!-- ВРЕМЕННО до сборки Modal_window_form (SEC-15): ссылка ведёт в форму
+             заявки тем же обработчиком якорей, что и пункты меню. При появлении
+             SEC-15 меняется href и обработчик — точка одна. -->
+        <a class="sw-header__callback" href="#sw-form">Заказать обратный звонок</a>
+      </div>
+
+      <!-- Пилюля. При компактном составе первой слева стоит плашка телефона,
+           при полном её место занимает текстовый номер и плашка скрывается.
+           Глифы: alt пустой, доступное имя даёт aria-label ссылки.
+           loading="lazy" не ставится — первый экран (NFR-4). -->
+      <div class="sw-header__pill">
+        <!-- ANL: имя цели не назначено -->
+        <a class="sw-header__plate sw-header__plate--phone" href="tel:+79649387392"
+           aria-label="Позвонить по номеру +7 964 938 73 92">
+          <img class="sw-header__plate-icon"
+               src="https://static.tildacdn.com/tild3864-6431-4566-b364-366462666633/phone_dark.svg" alt="">
+          <img class="sw-header__plate-icon sw-header__plate-icon--active"
+               src="https://static.tildacdn.com/tild3164-6564-4935-b336-656139303866/phone_white.svg" alt="">
+        </a>
+
+        <!-- ANL: имя цели не назначено -->
+        <a class="sw-header__plate sw-header__plate--max"
+           href="https://max.ru/join/Dssb1Agm0wct4o-rTod9jFze2If3DDvlooDwi95e550"
+           target="_blank" rel="noopener noreferrer" aria-label="Написать в MAX">
+          <img class="sw-header__plate-icon"
+               src="https://static.tildacdn.com/tild3132-3362-4738-b264-316533313838/max_logo_dark.svg" alt="">
+          <img class="sw-header__plate-icon sw-header__plate-icon--active"
+               src="https://static.tildacdn.com/tild6465-6263-4965-b232-373639656339/max_logo_white.svg" alt="">
+        </a>
+
+        <!-- ANL: имя цели не назначено -->
+        <a class="sw-header__plate sw-header__plate--vk" href="https://vk.ru/id1118207836"
+           target="_blank" rel="noopener noreferrer" aria-label="Открыть страницу VK">
+          <img class="sw-header__plate-icon"
+               src="https://static.tildacdn.com/tild3565-6435-4861-b362-343736333331/vk_logo_dark.svg" alt="">
+          <img class="sw-header__plate-icon sw-header__plate-icon--active"
+               src="https://static.tildacdn.com/tild3631-3161-4166-a136-633330356331/vk_logo_white.svg" alt="">
+        </a>
+      </div>
+    </div>
+
+    <!-- Бургер. Только разметка: логика открытия целиком в Mobile_menu (SEC-14),
+         предмет контракта — имя атрибута data-sw-menu-trigger. В крестик
+         не превращается. Иконкой не является — три CSS-линии. -->
+    <button class="sw-header__burger" type="button" data-sw-menu-trigger aria-expanded="false"
+            aria-label="Кнопка для открытия меню с навигацией по странице">
+      <span class="sw-header__burger-line"></span>
+      <span class="sw-header__burger-line"></span>
+      <span class="sw-header__burger-line"></span>
+    </button>
+
+    <!-- Отклик на копирование номера: только для скринридера, визуально ничего
+         не появляется. Узел пустой и присутствует с самого начала — регионы,
+         добавленные в DOM по событию, часто не озвучиваются. -->
+    <p class="sw-header__status" role="status" aria-live="polite"></p>
+
+  </div>
+</header>
+<!-- ═══════ T123 · СЕКЦИЯ: GlobalHeader (SEC-2) — конец ═══════ -->
+
+<!-- ═══════ T123 · СЕКЦИЯ: Hero (SEC-1) — начало ═══════ -->
+<style>
+/* стиль — секция Hero */
+
+/* box-sizing — посекционно, первой строкой. Потомковый * не выходит за контейнер. */
+.sw-hero,
+.sw-hero *,
+.sw-hero *::before,
+.sw-hero *::after { box-sizing: border-box; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ГРАНИЦЫ СЕКЦИИ. Их четыре, природа разная.
+   768 — проектная метрическая: ≤768 значения фиксированы, ≥769 клампятся. На ней
+   же перестраивается раскладка (строка → колонка) и кнопка уходит из панели
+   в видео-блок.
+   425 — вводится этой секцией и только для цветов кнопки в покое. Геометрия,
+   позиция и кегль на ней не меняются.
+   1024 и 375 — не наши: это границы токена --sw-radius-lg (design_system 2.4),
+   единого скругления всех секций проекта. Радиус переключается сам по себе,
+   состав и метрики секции на них не трогаются.
+   var() в @media не работает — границы литеральные.
+
+   ПРАВИЛО РАЗМЕРОВ — ПРОПОРЦИЯ, А НЕ ИНТЕРПОЛЯЦИЯ. Кегли и ширины заданы чистой
+   долей вьюпорта: clamp(минимум, X vw, максимум), свободного члена вида A*vw + B
+   нет ни в одном значении. Прежняя схема «значение на 769 равно значению на 768,
+   между 769 и 2560 линейно» отменена: ниже 768 величины не замораживаются, а
+   продолжают уменьшаться по той же доле до собственных минимумов. Поэтому клампы
+   стоят по обе стороны границы, а не только в блоке min-width: 769px.
+   Разрыв кегля заголовка на границе (38 → 23,5px) намеренный: на 769 панель
+   становится половиной вьюпорта, и доля обязана смениться.
+   Ступенчатых значений два, они интерполяции не подчиняются вовсе: радиус частей
+   и радиус кнопки.
+
+   ШИРИНА ТЕКСТОВЫХ БЛОКОВ — В EM. При пропорциональном кегле em привязывает
+   максимальную ширину к самому кеглю, и разбивка на строки перестаёт зависеть от
+   ширины экрана: 3 строки заголовка на ≥769, 2 на ≤768, 2 строки подзаголовка
+   везде. В px или % то же самое пришлось бы пересчитывать на каждой ширине.
+
+   ВЫСОТНОЙ СИСТЕМЫ НЕТ. Пределы в svh и конструкция min(ширинный clamp,
+   высотный предел) не применяются: опорные высоты вьюпорта были расчётными,
+   а не замеренными, и на реальном устройстве система разъезжалась. Единственное
+   место, где svh остался, — min-height самой секции.
+   Нижний порог высоты кнопки на ≥769 равен 44px — это тач-минимум, а не
+   декоративная величина, и снимать его нельзя.
+
+   ВЫСОТА СЕКЦИИ — НЕ ЖЁСТКАЯ. min-height: 100svh, не height: секция обязана
+   вытягиваться, когда контент не помещается (телефон в альбомной ориентации),
+   а не обрезать его. Из этого следует вся цепочка ниже: секция — флекс-колонка,
+   раскладка внутри неё flex: 1 0 auto (растёт до свободного места, но никогда
+   не сжимается ниже собственного контента), а строки грида — 1fr, то есть
+   minmax(auto, 1fr): их минимум равен содержимому, и при нехватке места они
+   тянут вверх всю секцию вместо того, чтобы обрезать панель.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ─── секция ─── */
+/* Высота НЕ МЕНЬШЕ 100svh: box-sizing: border-box, поэтому верхняя компенсация
+   шапки и нижний зазор до следующей секции входят внутрь этой высоты, а не
+   прибавляются к ней. min-height, а не height: когда контент не помещается,
+   секция вытягивается, а не обрезает его. Фолбэк 100vh строкой выше — Safari
+   до 15.4 не знает svh.
+   Флекс-колонка нужна, чтобы раскладка получила высоту от секции: процент
+   высоты от родителя с одним лишь min-height не разрешается, а flex: 1 0 auto
+   у раскладки решает и это, и растяжку.
+   Верхний padding = высота панели шапки + её нижний зазор. Шапка position: fixed
+   и места в потоке не занимает, компенсировать её обязана Hero (design_system
+   2.8). Обе формулы взяты из GlobalHeader дословно — при их правке правятся обе
+   точки.
+   Собственного фона у секции нет: фон страницы виден по периметру и в зазоре
+   между частями. В Тильде фон страницы задаётся в настройках страницы, не кодом. */
+.sw-hero {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 80px 15px 14px;
+  font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  font-size: var(--sw-fs-body, 1rem);
+  line-height: var(--sw-lh-body, 1.6);
+  color: var(--sw-color-text, #242424);
+}
+
+/* ─── раскладка ─── */
+/* Две равные части: ≤768 друг под другом и равные по высоте, ≥769 в строку и
+   равные по ширине. Ширина и высота частей — производные от вьюпорта, числом
+   не задаются нигде.
+   ГРИД, А НЕ ФЛЕКС. Флексом две равные части здесь не получаются: у панели есть
+   горизонтальный padding, у видео-блока его нет. При box-sizing: border-box
+   базис 0 трактуется как нулевой border-box, и padding прибавляется к нему
+   сверху — панель выходила шире на весь свой padding (замер на 2560: 1318
+   против 1130). Базис 50% чинит это лишь частично: отрицательное свободное
+   место, равное зазору, браузер делит пропорционально ВНУТРЕННИМ базисам,
+   а у панели он меньше на тот же padding — оставалось расхождение 1,4px.
+   Точное равенство флексом достижимо только через flex: 0 0 calc(50% - половина
+   зазора), то есть половина зазора переезжает во вторую точку правки и молча
+   разойдётся с gap при первом же его изменении.
+   У грида колонки minmax(0, 1fr) равны по определению, padding элемента на
+   ширину трека не влияет, а зазор остаётся объявлен ровно один раз.
+   КОЛОНКИ И СТРОКИ РАЗНЫЕ НАМЕРЕННО. Колонки — minmax(0, 1fr): их минимум ноль,
+   иначе длинное слово в заголовке распёрло бы колонку и части перестали бы быть
+   равными по ширине. Строки — 1fr, то есть minmax(auto, 1fr): их минимум равен
+   содержимому. Обе строки при этом всё равно равны между собой — при
+   неопределённой высоте контейнера размер fr-единицы берётся как максимум по
+   всем гибким трекам, поэтому обе строки получают высоту более высокой части.
+   Именно так секция и вытягивается вместо обрезки панели.
+   align-items: stretch объявлен явно: он и так дефолт, но это ровно то, чем
+   держится равенство частей по высоте в строчной раскладке. */
+.sw-hero__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 1fr 1fr;
+  align-items: stretch;
+  gap: 8px;
+  flex: 1 0 auto;
+}
+
+/* ─── панель ─── */
+/* Размер задаёт трек грида, собственного flex/width у части нет.
+   min-width: 0 оставлен на самой части: трек уже разрешает себе уйти ниже
+   min-content, но элемент внутри трека обязан разрешить это и себе, иначе
+   длинное слово в заголовке распрёт часть изнутри.
+   min-height: 0 здесь, наоборот, НЕ ставится: высота панели должна доходить до
+   трека и тянуть секцию вверх, когда контент не помещается. */
+.sw-hero__panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0 15px;
+  background: var(--sw-color-bg-section, #FFFFFF);
+  border: 1px solid var(--sw-color-bg-page, #F4F5F5);
+  border-radius: var(--sw-radius-lg, 46px);
+}
+
+/* ─── текстовый блок ─── */
+/* Группирующая обёртка: разделитель, заголовок и подзаголовок вместе с двумя
+   распорками между ними. Собственной максимальной ширины у блока нет — она
+   стоит на самих элементах и задана в em. Кнопка в блок не входит: на ≥769 она
+   шире (растянута от padding до padding панели), и общего контейнера у них быть
+   не может.
+   flex-basis: auto здесь обязателен, см. комментарий к распоркам ниже. */
+.sw-hero__content {
+  display: flex;
+  flex: 17 1 auto;
+  flex-direction: column;
+}
+
+/* ─── распорки вертикального ритма ─── */
+/* Ритм пропорциональный: фиксированных отступов нет ни одного, каждый зазор —
+   пустая распорка с flex-grow и flex-basis: 0, поэтому при нехватке места все
+   они схлопываются до нуля.
+   Класс распорки назван по элементу, который идёт ДО неё:
+     --top       верх панели → линия
+     --divider   линия → заголовок          (внутри текстового блока)
+     --title     заголовок → подзаголовок   (внутри текстового блока)
+     --subtitle  подзаголовок → кнопка      только ≥769
+     --bottom    кнопка → низ панели        ≥769
+                 подзаголовок → низ панели  ≤768
+   Отношения: 19 / 48 / 50 / 10 / 19 на ≥769 и 7 / 14 / 3 / 17 на ≤768. Выведены
+   из замеров 95/240/250/50/95 и 35/70/15/85 — в код идут только отношения,
+   пиксели не переносятся. На ≤768 кнопки в панели нет, --subtitle снят,
+   и пятый зазор сливается с --bottom.
+
+   ПОЧЕМУ У .sw-hero__content flex-grow РАВЕН СУММЕ ЕГО ВНУТРЕННИХ РАСПОРОК
+   (98 = 48 + 50 на ≥769, 17 = 14 + 3 на ≤768), А flex-basis — auto.
+   Распорки лежат в двух флекс-контекстах: три в панели, две в текстовом блоке.
+   При basis: auto свободное поле панели равно «высота минус текст минус кнопка»,
+   текстовый блок забирает из него 98/146 и раздаёт внутри 48 : 50 — то есть
+   48/146 и 50/146 от того же поля. Отношения всех пяти зазоров остаются
+   точными. С basis: 0 в общий пул попала бы высота самого текста, и все пять
+   зазоров уехали бы. */
+.sw-hero__spacer { flex: 0 1 0; }
+
+.sw-hero__spacer--top { flex-grow: 7; }
+.sw-hero__spacer--divider { flex-grow: 14; }
+.sw-hero__spacer--title { flex-grow: 3; }
+.sw-hero__spacer--subtitle { display: none; }
+.sw-hero__spacer--bottom { flex-grow: 17; }
+
+/* ─── разделительная линия ─── */
+/* Декоративная: пустой div без текста, в дереве доступности не участвует,
+   aria не задаётся. Не hr (тот несёт роль separator) и не img (рисовать нечего).
+   Первый элемент текстового блока; первым ТЕКСТОВЫМ элементом панели остаётся h1.
+   Ширина — доля вьюпорта. Предохранителя по ширине панели не требуется: доля
+   подобрана так, что линия помещается во внутреннюю ширину панели на всём
+   диапазоне, включая обе стороны границы 768/769. */
+.sw-hero__divider {
+  width: clamp(140px, 45vw, 346px);
+  height: 1px;
+  margin-inline: auto;
+  background: var(--sw-color-surface-muted, #EBEBEB);
+}
+
+/* ─── заголовок ─── */
+/* Единственная H1 на всю страницу (SEO-1). Двухцветный: цветовая граница
+   проходит по слову, а не по строке, поэтому два span на две группы слов.
+   Первая группа класса не имеет — берёт цвет самого h1. Принудительных
+   переносов нет, <br> не ставится: разбивку задаёт max-width заголовка.
+   width: 100% вместе с margin: 0 auto обязателен: автоматические поперечные
+   поля отключают растяжку флекс-элемента, и без явной ширины заголовок сел бы
+   по содержимому вместо того, чтобы дойти до max-width.
+   max-width в em: единица считается от собственного кегля элемента, поэтому при
+   пропорциональном кегле ширина строки в знаках держится постоянной, и разбивка
+   не зависит от ширины экрана — 2 строки на ≤768, 3 на ≥769.
+   Интерлиньяж — безликое число: множитель к кеглю, а не сумма с ним. */
+.sw-hero__title {
+  width: 100%;
+  max-width: 13.5em;
+  margin: 0 auto;
+  padding: 0;
+  color: var(--sw-color-text, #242424);
+  font-size: clamp(22px, 6.85vw, 38px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: 1.1;
+  text-align: center;
+}
+
+.sw-hero__title-accent {
+  color: var(--sw-color-text-muted, #8F8F8F);
+}
+
+/* ─── подзаголовок ─── */
+/* max-width одинаков в обоих состояниях: 22em дают 2 строки на всех ширинах. */
+.sw-hero__subtitle {
+  width: 100%;
+  max-width: 22em;
+  margin: 0 auto;
+  padding: 0;
+  color: var(--sw-color-text-muted, #8F8F8F);
+  font-size: clamp(9px, 3.06vw, 17px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: 1.3;
+  text-align: center;
+}
+
+/* ─── кнопка ─── */
+/* Ссылка-якорь в форму. Присутствует в двух экземплярах — внутри панели и
+   внутри видео-блока; текст и href идентичны, различаются только модификатором.
+   Неактивная в текущем состоянии копия скрыта display: none, поэтому из
+   таб-порядка и из дерева доступности выпадает сама: в таб-порядке всегда
+   ровно одна кнопка.
+   Радиус ступенчатый: 12px на ≤768, 24px на ≥769, между значениями не
+   интерполируется. Высота и кегль на ≤768 фиксированы, на ≥769 пропорциональны
+   ширине; нижняя граница клампа высоты там равна тач-минимуму 44px.
+   Тап-подсветка снята: у кнопки задано собственное активное состояние, и серая
+   заливка браузера конфликтовала бы с ним. Тот же приём, что у плашек шапки. */
+.sw-hero__cta {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  height: 57px;
+  margin: 0;
+  padding: 0;
+  border-radius: 12px;
+  background: var(--sw-color-cta, #242424);
+  color: var(--sw-color-text-on-cta, #FFFFFF);
+  font-size: 18px;
+  font-weight: var(--sw-fw-regular, 400);
+  text-align: center;
+  text-decoration: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  transition: background-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* Копия внутри панели живёт с 769: на ≤768 кнопка переносится в видео-блок. */
+.sw-hero__cta--panel { display: none; }
+
+/* Копия внутри видео-блока — абсолютом в нижней части, поверх видео.
+   Три зазора от краёв блока равны. Последний элемент секции и последнее, что
+   видит клиент до скролла. */
+.sw-hero__cta--media {
+  position: absolute;
+  right: 39px;
+  bottom: 39px;
+  left: 39px;
+}
+
+/* ─── видео-блок ─── */
+/* Собственного padding не имеет: 39px относятся к посадке кнопки.
+   position: relative держит абсолютные видео и кнопку, overflow: hidden обрезает
+   видео по скруглению.
+   Всё содержимое блока выведено из потока, поэтому собственной высоты у него
+   нет и высоту строки грида он не задаёт — её задаёт панель. */
+.sw-hero__media {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--sw-color-bg-section, #FFFFFF);
+  border: 1px solid var(--sw-color-bg-page, #F4F5F5);
+  border-radius: var(--sw-radius-lg, 46px);
+}
+
+/* Соотношения сторон нет: видео и постер обрезаются по cover, размер диктует
+   блок.
+   Выведено из потока намеренно. В потоке height: 100% при неопределённой высоте
+   родителя разрешается в auto, и в расчёт высоты строки грида пошёл бы
+   собственный размер видеофайла — блок распёрло бы до сотен пикселей ещё до
+   того, как посчитается панель. Абсолютом видео размера не даёт вовсе и просто
+   заполняет блок. */
+.sw-hero__video {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ─── фокус ─── */
+/* Общая обводка секции. Смещение 3px уводит кольцо за пределы кнопки — на
+   тёмной заливке оно иначе не читается. */
+.sw-hero__cta:focus-visible {
+  outline: 2px solid var(--sw-color-focus, #242424);
+  outline-offset: 3px;
+}
+
+/* ─── hover ─── */
+/* Только под (hover: hover) и с 769: на тач-устройстве состояние иначе залипает. */
+@media (hover: hover) and (min-width: 769px) {
+  .sw-hero__cta:hover { background: var(--sw-color-cta-hover, #0D0D0D); }
+}
+
+/* ─── active ─── */
+/* Без условия (hover: hover) и на всех ширинах: нажатие обязано давать отклик
+   и на телефоне. Цвет текста не меняется и остаётся тем же, что в покое.
+   Специфичность выше, чем у блока ≤425 ниже, поэтому порядок правил здесь роли
+   не играет. На iOS Safari :active не срабатывает без слушателя касания на
+   самом элементе — он вешается в поведении секции. */
+.sw-hero__cta:active { background: var(--sw-color-link-hover, #A68A73); }
+
+/* ─── 769px и выше: метрики клампятся, раскладка становится строкой ─── */
+@media (min-width: 769px) {
+  .sw-hero {
+    padding:
+      calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, 1.787vw - 5.74px, 40px))
+      clamp(15px, 1.396vw + 4.26px, 40px)
+      clamp(8px, 1.787vw - 5.74px, 40px);
+  }
+
+  .sw-hero__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    gap: 17px;
+  }
+
+  .sw-hero__panel {
+    padding: 0 clamp(15px, 4.411vw - 18.92px, 94px);
+  }
+
+  /* Пятый зазор возвращается: кнопка снова в панели, --subtitle её отделяет
+     от подзаголовка. 98 = 48 + 50, сумма внутренних распорок текстового блока,
+     см. комментарий к распоркам. */
+  .sw-hero__content { flex-grow: 98; }
+
+  .sw-hero__spacer--top { flex-grow: 19; }
+  .sw-hero__spacer--divider { flex-grow: 48; }
+  .sw-hero__spacer--title { flex-grow: 50; }
+  .sw-hero__spacer--bottom { flex-grow: 19; }
+
+  .sw-hero__spacer--subtitle {
+    display: block;
+    flex-grow: 10;
+  }
+
+  .sw-hero__divider { width: min(14.06vw, 360px); }
+
+  .sw-hero__title {
+    max-width: 10.4em;
+    font-size: clamp(23px, 3.05vw, 78px);
+  }
+
+  .sw-hero__subtitle {
+    font-size: clamp(11px, 1.055vw, 27px);
+  }
+
+  /* Нижняя граница клампа высоты — тач-минимум 44px, не декоративная величина. */
+  .sw-hero__cta {
+    height: clamp(44px, 4.69vw, 120px);
+    border-radius: 24px;
+    font-size: clamp(16px, 1.133vw, 29px);
+  }
+
+  /* Растянута от padding до padding панели: ширину кнопки задаёт padding
+     панели, а не max-width заголовка. */
+  .sw-hero__cta--panel {
+    display: flex;
+    align-self: stretch;
+  }
+
+  .sw-hero__cta--media { display: none; }
+}
+
+/* ─── 425px и ниже: у кнопки меняются только цвета в покое ─── */
+/* Геометрия, позиция и кегль те же. Активное состояние объявлено выше и сюда
+   не приходит: цвет текста в нажатии остаётся тем же, что в покое. */
+@media (max-width: 425px) {
+  .sw-hero__cta {
+    background: var(--sw-color-bg-section, #FFFFFF);
+    color: var(--sw-color-text, #242424);
+  }
+}
+
+/* ─── 1024px и ниже: средняя ступень радиуса ─── */
+/* Оба блока ниже — про радиус и только про радиус. Границы взяты из объявления
+   токена --sw-radius-lg в ЗОНЕ A и повторяют его форму: базовое правило плюс
+   два max-width в том же порядке. Ступени в один фолбэк не помещаются, поэтому
+   у каждой ступени свой: 46 в базовом правиле, 26 здесь, 14 ниже. Уедет секция
+   в Тильду раньше токенов — радиус всё равно будет верным на всех ширинах.
+   Между собой эти два блока порядок имеют: на 375 верны оба, и решает
+   последний. */
+@media (max-width: 1024px) {
+  .sw-hero__panel,
+  .sw-hero__media { border-radius: var(--sw-radius-lg, 26px); }
+}
+
+/* ─── 375px и ниже: нижняя ступень радиуса ─── */
+@media (max-width: 375px) {
+  .sw-hero__panel,
+  .sw-hero__media { border-radius: var(--sw-radius-lg, 14px); }
+}
+
+/* ─── prefers-reduced-motion ─── */
+/* Анимаций появления и реакций на скролл в секции нет, движение остаётся только
+   в смене состояний кнопки. Видео глушится в поведении секции: атрибут autoplay
+   через CSS не отменяется. */
+@media (prefers-reduced-motion: reduce) {
+  .sw-hero__cta { transition: none; }
+}
+</style>
+<!-- разметка — секция Hero -->
+<section class="sw-hero" id="sw-hero">
+  <div class="sw-hero__layout">
+
+    <!-- Панель: на ≥769 левая, на ≤768 верхняя. Порядок в DOM один на оба
+         состояния, свойство order не используется. -->
+    <div class="sw-hero__panel">
+
+      <div class="sw-hero__spacer sw-hero__spacer--top"></div>
+
+      <div class="sw-hero__content">
+
+        <!-- Разделительная линия. Декоративная: текста нет, роли нет,
+             aria не задаётся. Первым текстовым элементом панели идёт H1. -->
+        <div class="sw-hero__divider"></div>
+
+        <div class="sw-hero__spacer sw-hero__spacer--divider"></div>
+
+        <!-- Единственная H1 на всю страницу. Два span на две группы слов,
+             перенос строк естественный. -->
+        <h1 class="sw-hero__title">
+          <span>Каменный ковёр,</span>
+          <span class="sw-hero__title-accent">который не проседает и не теряет цвет</span>
+        </h1>
+
+        <div class="sw-hero__spacer sw-hero__spacer--title"></div>
+
+        <p class="sw-hero__subtitle">Качественное, прочное и долговечное покрытие на вашем участке с гарантией до 2 лет</p>
+
+      </div>
+
+      <div class="sw-hero__spacer sw-hero__spacer--subtitle"></div>
+
+      <!-- Копия кнопки для ≥769. На ≤768 скрыта. -->
+      <!-- ANL: имя цели не назначено -->
+      <a class="sw-hero__cta sw-hero__cta--panel" href="#sw-form">Обсудить проект</a>
+
+      <div class="sw-hero__spacer sw-hero__spacer--bottom"></div>
+
+    </div>
+
+    <!-- Видео-блок: на ≥769 правый, на ≤768 нижний. -->
+    <div class="sw-hero__media">
+
+      <!-- Видео декоративное, поэтому aria-hidden стоит на самом video, а не на
+           контейнере: внутри контейнера на ≤768 лежит кнопка, и она из дерева
+           доступности выпадать не должна.
+           Постер показывается до старта воспроизведения и при любом сбое
+           загрузки. Без muted и playsinline iOS воспроизведение не запустит.
+           loading="lazy" не ставится — первый экран (NFR-4). -->
+      <video class="sw-hero__video"
+             src="https://static.tildacdn.com/vide3034-3066-4335-b733-613363663531/Hero_video.mp4"
+             poster="https://static.tildacdn.com/tild6664-3334-4033-a136-383431333739/Hero_video-banner.jpg"
+             autoplay muted playsinline loop preload="auto" aria-hidden="true"></video>
+
+      <!-- Копия кнопки для ≤768. На ≥769 скрыта. Текст и href совпадают
+           с копией в панели. -->
+      <!-- ANL: имя цели не назначено -->
+      <a class="sw-hero__cta sw-hero__cta--media" href="#sw-form">Обсудить проект</a>
+
+    </div>
+
+  </div>
+</section>
+<!-- ═══════ T123 · СЕКЦИЯ: Hero (SEC-1) — конец ═══════ -->
+
+<!-- ═══════ T123 · СЕКЦИЯ: Преимущества материала (SEC-3) — начало ═══════ -->
+<style>
+/* стиль — секция Преимущества материала */
+.sw-benefits,
+.sw-benefits *,
+.sw-benefits *::before,
+.sw-benefits *::after { box-sizing: border-box; }
+
+.sw-benefits {
+  font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  font-size: var(--sw-fs-body, 1rem);
+  line-height: var(--sw-lh-body, 1.6);
+  color: var(--sw-color-text, #242424);
+  background: var(--sw-color-bg-section, #FFFFFF);
+}
+</style>
+<!-- разметка — секция Преимущества материала -->
+<section class="sw-benefits" id="sw-benefits" data-sw-scaffold>
+  <div class="sw-benefits__container"></div>
+</section>
+<!-- ═══════ T123 · СЕКЦИЯ: Преимущества материала (SEC-3) — конец ═══════ -->
+
+<!-- ═══════ T123 · СЕКЦИЯ: О нас (SEC-4) — начало ═══════ -->
+<style>
+/* стиль — секция О нас */
+.sw-about,
+.sw-about *,
+.sw-about *::before,
+.sw-about *::after { box-sizing: border-box; }
+
+.sw-about {
+  font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  font-size: var(--sw-fs-body, 1rem);
+  line-height: var(--sw-lh-body, 1.6);
+  color: var(--sw-color-text, #242424);
+  background: var(--sw-color-bg-section, #FFFFFF);
+}
+</style>
+<!-- разметка — секция О нас -->
+<section class="sw-about" id="sw-about" data-sw-scaffold>
+  <div class="sw-about__container"></div>
+</section>
+<!-- ═══════ T123 · СЕКЦИЯ: О нас (SEC-4) — конец ═══════ -->
+
+<!-- ═══════ T123 · СЕКЦИЯ: Каталог (SEC-5) — начало ═══════ -->
+<style>
+/* стиль — секция Каталог */
+.sw-catalog,
+.sw-catalog *,
+.sw-catalog *::before,
+.sw-catalog *::after { box-sizing: border-box; }
+
+.sw-catalog {
+  font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  font-size: var(--sw-fs-body, 1rem);
+  line-height: var(--sw-lh-body, 1.6);
+  color: var(--sw-color-text, #242424);
+  background: var(--sw-color-bg-section, #FFFFFF);
+}
+</style>
+<!-- разметка — секция Каталог -->
+<section class="sw-catalog" id="sw-catalog" data-sw-scaffold>
+  <div class="sw-catalog__container"></div>
+</section>
+<!-- ═══════ T123 · СЕКЦИЯ: Каталог (SEC-5) — конец ═══════ -->
+
+<!-- ═══════ T123 · СЕКЦИЯ: Портфолио (SEC-6) — начало ═══════ -->
+<style>
+/* стиль — секция Портфолио */
+.sw-portfolio,
+.sw-portfolio *,
+.sw-portfolio *::before,
+.sw-portfolio *::after { box-sizing: border-box; }
+
+.sw-portfolio {
+  font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  font-size: var(--sw-fs-body, 1rem);
+  line-height: var(--sw-lh-body, 1.6);
+  color: var(--sw-color-text, #242424);
+  background: var(--sw-color-bg-section, #FFFFFF);
+}
+</style>
+<!-- разметка — секция Портфолио -->
+<section class="sw-portfolio" id="sw-portfolio" data-sw-scaffold>
+  <div class="sw-portfolio__container"></div>
+</section>
+<!-- ═══════ T123 · СЕКЦИЯ: Портфолио (SEC-6) — конец ═══════ -->
+
+<!-- ═══════ T123 · СЕКЦИЯ: Этапы реализации (SEC-7) — начало ═══════ -->
+<style>
+/* стиль — секция Этапы реализации */
+.sw-steps,
+.sw-steps *,
+.sw-steps *::before,
+.sw-steps *::after { box-sizing: border-box; }
+
+.sw-steps {
+  font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  font-size: var(--sw-fs-body, 1rem);
+  line-height: var(--sw-lh-body, 1.6);
+  color: var(--sw-color-text, #242424);
+  background: var(--sw-color-bg-section, #FFFFFF);
+}
+</style>
+<!-- разметка — секция Этапы реализации -->
+<section class="sw-steps" id="sw-steps" data-sw-scaffold>
+  <div class="sw-steps__container"></div>
+</section>
+<!-- ═══════ T123 · СЕКЦИЯ: Этапы реализации (SEC-7) — конец ═══════ -->
+
+<!-- ═══════ T123 · СЕКЦИЯ: Видео (SEC-8) — начало ═══════ -->
+<style>
+/* стиль — секция Видео */
+.sw-video,
+.sw-video *,
+.sw-video *::before,
+.sw-video *::after { box-sizing: border-box; }
+
+.sw-video {
+  font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  font-size: var(--sw-fs-body, 1rem);
+  line-height: var(--sw-lh-body, 1.6);
+  color: var(--sw-color-text, #242424);
+  background: var(--sw-color-bg-section, #FFFFFF);
+}
+</style>
+<!-- разметка — секция Видео -->
+<section class="sw-video" id="sw-video" data-sw-scaffold>
+  <div class="sw-video__container"></div>
+</section>
+<!-- ═══════ T123 · СЕКЦИЯ: Видео (SEC-8) — конец ═══════ -->
+
+<!-- ═══════ T123 · СЕКЦИЯ: Форма заявки (SEC-9) — начало ═══════ -->
+<style>
+/* стиль — секция Форма заявки */
+.sw-form,
+.sw-form *,
+.sw-form *::before,
+.sw-form *::after { box-sizing: border-box; }
+
+.sw-form {
+  font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  font-size: var(--sw-fs-body, 1rem);
+  line-height: var(--sw-lh-body, 1.6);
+  color: var(--sw-color-text, #242424);
+  background: var(--sw-color-bg-section, #FFFFFF);
+}
+</style>
+<!-- разметка — секция Форма заявки -->
+<section class="sw-form" id="sw-form" data-sw-scaffold>
+  <div class="sw-form__container"></div>
+</section>
+<!-- ═══════ T123 · СЕКЦИЯ: Форма заявки (SEC-9) — конец ═══════ -->
+
+<!-- ═══════ T123 · СЕКЦИЯ: Footer (SEC-10) — начало ═══════ -->
+<style>
+/* стиль — секция Footer */
+.sw-footer,
+.sw-footer *,
+.sw-footer *::before,
+.sw-footer *::after { box-sizing: border-box; }
+
+.sw-footer {
+  font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  font-size: var(--sw-fs-body, 1rem);
+  line-height: var(--sw-lh-body, 1.6);
+  color: var(--sw-color-text, #242424);
+  background: var(--sw-color-bg-section, #FFFFFF);
+}
+</style>
+<!-- разметка — секция Footer -->
+<footer class="sw-footer" id="sw-footer" data-sw-scaffold>
+  <div class="sw-footer__container"></div>
+</footer>
+<!-- ═══════ T123 · СЕКЦИЯ: Footer (SEC-10) — конец ═══════ -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ЗОНА B — СЕКЦИИ — конец
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ЗОНА C — СКРИПТЫ — начало
+     Блоки T123 в самом низу страницы Тильды.
+     JS секций живёт здесь, а не рядом с разметкой: это воспроизводит реальный
+     порядок на странице Тильды и не даёт секции незаметно опереться
+     на соседство со своим markup.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- ═══════ T123 · ИНИЦИАЛИЗАЦИЯ GSAP — ровно один блок на страницу ═══════ -->
+<script>
+(function () {
+  if (!window.gsap) return;
+  var plugins = [];
+  if (window.ScrollTrigger) plugins.push(window.ScrollTrigger);
+  if (window.SplitText) plugins.push(window.SplitText);
+  if (plugins.length) gsap.registerPlugin.apply(gsap, plugins);
+})();
+</script>
+<!-- Плагины регистрируются независимо друг от друга: если один не догрузился,
+     второй продолжает работать. Общая проверка на оба убила бы регистрацию
+     ScrollTrigger из-за одного отсутствующего файла. -->
+
+<!-- ═══════ T123 · ПОВЕДЕНИЕ: GlobalHeader (SEC-2) ═══════ -->
+<script>
+/* поведение — секция GlobalHeader */
+(function () {
+
+  var header = document.querySelector('.sw-header');
+  if (!header) return;
+
+  var bar = header.querySelector('.sw-header__bar');
+
+  /* Компактное состояние и reduced-motion — метрическая граница 768,
+     та же, что в CSS и что пойдёт в gsap.matchMedia() по VIS-7. */
+  var compactMQ = window.matchMedia('(max-width: 768px)');
+  var reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* ── 1. Панель: автоскрытие при скролле ──────────────────────────────────
+     Движение отдано CSS-переходу: длительность и кривая берутся из токенов
+     дословно (--sw-ease-in-out = cubic-bezier(0.65, 0, 0.35, 1); в GSAP этой
+     кривой нет без CustomEase, а его в стеке нет). Скрипт только переключает
+     класс. Нет GSAP на странице — панель работает по-прежнему.
+     На ≤768 и при prefers-reduced-motion панель не уезжает (VIS-7). */
+  if (bar) {
+    var HIDDEN_CLASS = 'sw-header__bar--hidden';
+    var THRESHOLD = 150;   /* порог от верха страницы, px */
+    var DELTA = 4;         /* мёртвая зона против дребезга, px */
+    var lastY = window.pageYOffset || 0;
+    var ticking = false;
+
+    /* Предохранитель входа. Браузер восстанавливает позицию скролла при
+       перезагрузке: страница открывается на глубине, а панель проигрывает выезд
+       сверху. Ниже порога автоскрытия вход не запускается вовсе — панель сразу
+       в конечном положении, видимой. Проверка повторяется по load: восстановление
+       позиции происходит позже, чем выполняется этот блок. */
+    var dropEntrance = function () {
+      if ((window.pageYOffset || 0) > THRESHOLD) bar.classList.add('sw-header__bar--no-entrance');
+    };
+    dropEntrance();
+    window.addEventListener('load', dropEntrance);
+
+    var applyScrollState = function () {
+      ticking = false;
+      var y = window.pageYOffset || 0;
+
+      if (compactMQ.matches || reduceMQ.matches) {
+        bar.classList.remove(HIDDEN_CLASS);
+        lastY = y;
+        return;
+      }
+
+      if (y <= THRESHOLD) bar.classList.remove(HIDDEN_CLASS);
+      else if (y - lastY > DELTA) bar.classList.add(HIDDEN_CLASS);
+      else if (lastY - y > DELTA) bar.classList.remove(HIDDEN_CLASS);
+
+      lastY = y;
+    };
+
+    var onScroll = function () {
+      if (ticking) return;
+      ticking = true;
+      if (window.requestAnimationFrame) window.requestAnimationFrame(applyScrollState);
+      else setTimeout(applyScrollState, 16);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    if (compactMQ.addEventListener) {
+      compactMQ.addEventListener('change', applyScrollState);
+      reduceMQ.addEventListener('change', applyScrollState);
+    }
+  }
+
+  /* ── 2. Якоря: плавный переход с компенсацией высоты шапки ────────────────
+     scroll-behavior задавался бы по корню документа — это глобальное правило,
+     в перенесённом коде запрещено. Компенсация берётся с самого контейнера:
+     его высота = панель + нижний зазор, и она уже посчитана браузером.
+     Обслуживает пункты меню, логотип и вторичную ссылку.
+     Узла-цели на странице нет — ссылка ведёт себя как обычная, секция цела. */
+  var scrollToY = function (y) {
+    var top = y < 0 ? 0 : y;
+    try {
+      window.scrollTo({ top: top, behavior: reduceMQ.matches ? 'auto' : 'smooth' });
+    } catch (e) {
+      window.scrollTo(0, top);
+    }
+  };
+
+  var anchors = header.querySelectorAll('a[href^="#"]');
+  Array.prototype.forEach.call(anchors, function (anchor) {
+    anchor.addEventListener('click', function (event) {
+      var id = (anchor.getAttribute('href') || '').slice(1);
+      var top;
+
+      if (!id || id === header.id) {
+        top = 0;                                  /* логотип — наверх страницы */
+      } else {
+        var target = document.getElementById(id);
+        if (!target) return;
+        top = target.getBoundingClientRect().top
+            + (window.pageYOffset || 0)
+            - header.getBoundingClientRect().height;
+      }
+
+      event.preventDefault();
+      scrollToY(top);
+    });
+  });
+
+  /* ── 3. Номер телефона: копирование в буфер ──────────────────────────────
+     Источник строки один — href="tel:" плашки телефона; видимая строка
+     с пробелами живёт только в текстовом узле. Плашки на странице нет —
+     работает запасное значение.
+     Визуального подтверждения по брифу нет — отклик только для скринридера,
+     через aria-live регион. Содержимое перед записью очищается: без этого второй
+     клик подряд с тем же текстом не объявится. */
+  var phoneButton = header.querySelector('.sw-header__contact--phone');
+  if (phoneButton) {
+    var phonePlate = header.querySelector('.sw-header__plate--phone');
+    var phoneHref = phonePlate ? (phonePlate.getAttribute('href') || '') : '';
+    var phoneValue = phoneHref.indexOf('tel:') === 0 ? phoneHref.slice(4) : '+79649387392';
+    var status = header.querySelector('.sw-header__status');
+
+    var announce = function (message) {
+      if (!status) return;
+      status.textContent = '';
+      setTimeout(function () { status.textContent = message; }, 100);
+    };
+
+    phoneButton.addEventListener('click', function () {
+      /* ANL: имя цели не назначено */
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(phoneValue).then(function () {
+          announce('Номер телефона скопирован');
+        }).catch(function () {});
+      }
+    });
+  }
+
+  /* ── 4. Активное состояние плашек на тач-устройствах ──────────────────────
+     На iOS Safari :active не срабатывает без слушателя касания на самом
+     элементе. Обработчик пустой: состояние рисует CSS. */
+  var plates = header.querySelectorAll('.sw-header__plate');
+  Array.prototype.forEach.call(plates, function (plate) {
+    plate.addEventListener('touchstart', function () {}, { passive: true });
+  });
+
+  /* ── 5. Пункты меню: text-roll ────────────────────────────────────────────
+     Библиотеки нет — секция тихо ничего не делает, пункты остаются обычными
+     ссылками. registerPlugin здесь не вызывается: он один раз в блоке
+     инициализации выше.
+     Граница 769: ниже неё меню в панели нет, сплитить нечего. Значение обязано
+     совпадать с границей появления меню в стилях секции — при её пересмотре
+     правятся обе точки. Композиционная граница 1200 здесь ни при чём:
+     она переключает только правую зону, где сплита нет.
+     Слушатели — на самом <a>: при ре-сплите сгенерированные узлы
+     пересоздаются и обработчики на них умирают (ANL-5). */
+  var navLinks = header.querySelectorAll('.sw-header__nav-link');
+
+  if (navLinks.length && window.gsap && window.SplitText) {
+
+    var initTextRoll = function () {
+      gsap.matchMedia().add(
+        '(hover: hover) and (min-width: 769px) and (prefers-reduced-motion: no-preference)',
+        function () {
+          var teardown = [];
+
+          Array.prototype.forEach.call(navLinks, function (link) {
+            var base = link.querySelector('.sw-header__nav-text:not(.sw-header__nav-text--alt)');
+            var alt = link.querySelector('.sw-header__nav-text--alt');
+            if (!base || !alt) return;
+
+            /* aria задаётся явно: элемент интерактивный, доступное имя ссылки
+               уже стоит в aria-label и подменять его плагину нельзя. */
+            var splitBase = SplitText.create(base, {
+              type: 'chars', charsClass: 'sw-header__nav-char', aria: 'none'
+            });
+            var splitAlt = SplitText.create(alt, {
+              type: 'chars', charsClass: 'sw-header__nav-char', aria: 'none'
+            });
+
+            /* Нижняя копия смещена на строку вниз своим CSS, поэтому обе
+               копии едут в одну сторону: верхняя уходит вверх за границу
+               строки, нижняя приходит на её место. Волна слева направо. */
+            var roll = gsap.timeline({ paused: true })
+              .to(splitBase.chars, { yPercent: -100, duration: 0.4, ease: 'power3.inOut', stagger: 0.03 }, 0)
+              .to(splitAlt.chars, { yPercent: -100, duration: 0.4, ease: 'power3.inOut', stagger: 0.03 }, 0);
+
+            var play = function () { roll.play(); };
+            var back = function () { roll.reverse(); };
+
+            link.addEventListener('mouseenter', play);
+            link.addEventListener('mouseleave', back);
+
+            teardown.push(function () {
+              link.removeEventListener('mouseenter', play);
+              link.removeEventListener('mouseleave', back);
+              roll.kill();
+              splitBase.revert();
+              splitAlt.revert();
+            });
+          });
+
+          return function () {
+            teardown.forEach(function (undo) { undo(); });
+          };
+        }
+      );
+    };
+
+    /* Сплит после готовности шрифта: при font-display: swap символы,
+       посчитанные на фолбэк-шрифте, разъедутся в момент подмены на Inter. */
+    if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+      document.fonts.ready.then(initTextRoll);
+    } else {
+      initTextRoll();
+    }
+  }
+
+})();
+</script>
+
+<!-- ═══════ T123 · ПОВЕДЕНИЕ: Hero (SEC-1) ═══════ -->
+<script>
+/* поведение — секция Hero */
+(function () {
+
+  var hero = document.querySelector('.sw-hero');
+  if (!hero) return;
+
+  var reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* ── 1. Видео ─────────────────────────────────────────────────────────────
+     Автоплей всегда и на всех ширинах — он объявлен атрибутом в разметке.
+     Через CSS атрибут не отменяется, поэтому при prefers-reduced-motion: reduce
+     воспроизведение снимается отсюда.
+     Одного pause() мало: он оставил бы на экране застывший кадр. load()
+     возвращает элемент в исходное состояние, и на месте видео снова виден
+     постер — ровно то, что требуется. Атрибут снимается до load(), иначе
+     воспроизведение стартовало бы заново.
+     Библиотек секция не использует: анимаций появления и реакций на скролл
+     в Hero нет, GSAP здесь не нужен. */
+  var video = hero.querySelector('.sw-hero__video');
+
+  if (video) {
+    var stopVideo = function () {
+      video.removeAttribute('autoplay');
+      video.pause();
+      video.load();
+    };
+
+    var startVideo = function () {
+      var played = video.play();
+      if (played && played.catch) played.catch(function () {});
+    };
+
+    if (reduceMQ.matches) stopVideo();
+
+    /* Настройку системы можно переключить не перезагружая страницу. */
+    if (reduceMQ.addEventListener) {
+      reduceMQ.addEventListener('change', function () {
+        if (reduceMQ.matches) stopVideo();
+        else startVideo();
+      });
+    }
+  }
+
+  /* ── 2. Кнопка: якорь в форму ─────────────────────────────────────────────
+     Механизм тот же, что у пунктов меню GlobalHeader: scroll-behavior задавался
+     бы по корню документа, а это глобальное правило и в перенесённом коде оно
+     запрещено.
+     Компенсация высоты шапки берётся из собственного padding-top секции, а не
+     из размеров .sw-header: значение по построению то же самое (высота панели
+     плюс её нижний зазор), но секция при этом не обращается к чужому блоку и
+     переживает его отсутствие.
+     Узла-цели на странице нет — обработчик выходит, и ссылка ведёт себя как
+     обычная. Секция цела. */
+  var scrollToY = function (y) {
+    var top = y < 0 ? 0 : y;
+    try {
+      window.scrollTo({ top: top, behavior: reduceMQ.matches ? 'auto' : 'smooth' });
+    } catch (e) {
+      window.scrollTo(0, top);
+    }
+  };
+
+  var ctas = hero.querySelectorAll('.sw-hero__cta');
+
+  Array.prototype.forEach.call(ctas, function (cta) {
+
+    cta.addEventListener('click', function (event) {
+      /* ANL: имя цели не назначено */
+      var id = (cta.getAttribute('href') || '').slice(1);
+      if (!id) return;
+
+      var target = document.getElementById(id);
+      if (!target) return;
+
+      var compensation = parseFloat(window.getComputedStyle(hero).paddingTop) || 0;
+      var top = target.getBoundingClientRect().top
+              + (window.pageYOffset || 0)
+              - compensation;
+
+      event.preventDefault();
+      scrollToY(top);
+    });
+
+    /* На iOS Safari :active не срабатывает без слушателя касания на самом
+       элементе. Обработчик пустой: состояние рисует CSS. */
+    cta.addEventListener('touchstart', function () {}, { passive: true });
+  });
+
+})();
+</script>
+
+<!-- ═══════ T123 · ПОВЕДЕНИЕ: Преимущества материала (SEC-3) ═══════ -->
+
+<!-- ═══════ T123 · ПОВЕДЕНИЕ: О нас (SEC-4) ═══════ -->
+
+<!-- ═══════ T123 · ПОВЕДЕНИЕ: Каталог (SEC-5) ═══════ -->
+
+<!-- ═══════ T123 · ПОВЕДЕНИЕ: Портфолио (SEC-6) ═══════ -->
+
+<!-- ═══════ T123 · ПОВЕДЕНИЕ: Этапы реализации (SEC-7) ═══════ -->
+
+<!-- ═══════ T123 · ПОВЕДЕНИЕ: Видео (SEC-8) ═══════ -->
+
+<!-- ═══════ T123 · ПОВЕДЕНИЕ: Форма заявки (SEC-9) ═══════ -->
+
+<!-- ═══════ T123 · ПОВЕДЕНИЕ: Footer (SEC-10) ═══════ -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ЗОНА C — СКРИПТЫ — конец
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+</body>
+</html>
