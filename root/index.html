@@ -133,7 +133,6 @@
   --sw-lh-4: 1.22;
   --sw-lh-5: 1.10;
   --sw-lh-6: 1.08;
-
   /* ─── типографика: начертания (2.2) ─── */
   --sw-fw-light: 300;
   --sw-fw-regular: 400;
@@ -487,7 +486,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
 .sw-header__logo-img {
   display: block;
-  height: 40px;
+  height: clamp(37px, 3.59vw + 25.3px, 58px);
   width: auto;
   max-width: 100%;
   object-fit: contain;
@@ -841,11 +840,11 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   /* Бургер живёт только в компактном составе: с 769 его работу делает меню. */
   .sw-header__burger { display: none; }
 
-  /* Анкер логотипа — 768, а не 769: логотип живёт на всех ширинах, в отличие
+  /* Анкер логотипа — 768, а не 769: логотип живёт на всех ширине, в отличие
      от текста и зазоров вокруг меню. Проверка: 768 → 40,0; 2560 → 90,0.
      Высота задаётся, ширина считается по пропорции 738:358 — на 2560 это
      185,5. Пропорцию не трогать: 170×90 сплющило бы логотип на 9%. */
-  .sw-header__logo-img { height: clamp(40px, 2.79vw + 18.57px, 90px); }
+  .sw-header__logo-img { height: clamp(58px, 3.21vw + 21.36px, 104px); }
 
   .sw-header__plate {
     width: clamp(44px, 1.452vw + 32.84px, 70px);
@@ -1514,7 +1513,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
       <!-- Копия кнопки для ≥769. На ≤768 скрыта. -->
       <!-- ANL: имя цели не назначено -->
-      <a class="sw-hero__cta sw-hero__cta--panel" href="#sw-form">Обсудить проект</a>
+      <a class="sw-hero__cta sw-hero__cta--panel" href="#sw-catalog">Перейти к каталогу</a>
 
       <div class="sw-hero__spacer sw-hero__spacer--bottom"></div>
 
@@ -2765,22 +2764,969 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 <!-- ═══════ T123 · СЕКЦИЯ: Каталог (SEC-5) — начало ═══════ -->
 <style>
 /* стиль — секция Каталог */
+
+/* box-sizing — посекционно, первой строкой. Потомковый * не выходит за контейнер. */
 .sw-catalog,
 .sw-catalog *,
 .sw-catalog *::before,
 .sw-catalog *::after { box-sizing: border-box; }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   ГРАНИЦЫ СЕКЦИИ. Их ДВЕ, и обе перестраивают композицию — отступление от
+   CLAUDE.md 4 («перестроение композиции одно»), подтверждённое пользователем
+   по брифу секции (ответ 14). Причина в самом задании: шапка секции живёт в трёх
+   разных раскладках, а не в двух.
+     >1024  — лейбл в левой колонке (25% внутренней ширины панели), лид в правой;
+     769…1024 — лид слева (66%), лейбл справа (34%): порядок зон меняется местами;
+     ≤768   — одна колонка, лейбл уходит под лид.
+   Обе границы уже существуют в проекте и новых чисел секция не заводит:
+   768/769 — метрическая граница страницы (design_system 2.7), 1024/1025 —
+   --sw-bp-lg, на нём же перестраивается SEC-3. В реестр 2.7 обе строки вносятся
+   отдельным проходом (долг документации).
+   768/769 несёт здесь ОБЕ роли сразу: и метрики страницы (боковой отступ, нижний
+   зазор, внутренние отступы панели), и композицию. Разводить их, как в SEC-3,
+   не требуется — они совпадают.
+   425 — третье независимое применение уже зарегистрированной границы: лейбл
+   ломается на две строки. Естественным переносом это не получить, расчёт даёт
+   слом только около 325px.
+   1024 и 375 — не наши: ступени токена --sw-radius-lg, общего скругления всех
+   секций проекта. То, что 1024 совпала с границей композиции, — совпадение
+   значений, а не общая причина.
+   var() в @media не работает — границы литеральные.
+
+   ОПОРНАЯ КОРОБКА — sw-catalog__main. Своих padding, border и margin не имеет
+   намеренно: её content-box совпадает с content-box панели пиксель в пиксель.
+   На этом держатся кегль лида (8cqi), кегль пилюли (3.8cqi), радиус выделенной
+   области и отбивка ряда пилюль. Появится отступ — все четыре разъедутся молча,
+   без ошибки в консоли. Карточка объявляет собственный контейнер: от её ширины
+   считаются радиус фото и внутренние зазоры карточки.
+
+   ТИПОГРАФИКА — ступени --sw-fs-1…6 и множители --sw-lh-1…6 из ЗОНЫ A. Своей
+   шкалы секция не заводит (ответ 4). Кегль лида ограничен сверх того долей
+   контейнера — та же формула, что у sw-about__lead и sw-benefits__title.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ─── секция ─── */
+/* Собственного фона нет: фон несёт панель, вокруг видна подложка страницы.
+   Нижний зазор до следующей секции — метрика страницы design_system 7,
+   свободный член в ней допустим (2.9): это посадка секции, не размер содержимого.
+   --sw-catalog-top — компенсация фиксированной шапки: высота панели плюс её
+   нижний зазор. Через scroll-margin-top она становится ЕДИНСТВЕННЫМ читаемым
+   источником этой величины для поведения секции (кнопка «Выбрать» ведёт к форме
+   и обязана встать под шапку, а не под неё). Приём и мотив — как у sw-portfolio:
+   секция не обращается ни к DOM чужого блока, ни к его классам. */
 .sw-catalog {
+  --sw-catalog-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+  margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  scroll-margin-top: var(--sw-catalog-top);
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: var(--sw-fs-body, 1rem);
   line-height: var(--sw-lh-body, 1.6);
   color: var(--sw-color-text, #242424);
+}
+
+@media (max-width: 768px) {
+  .sw-catalog {
+    --sw-catalog-top: 80px;
+    margin-bottom: 8px;
+  }
+}
+
+/* ─── контейнер ─── */
+.sw-catalog__container {
+  max-width: 2560px;
+  margin-inline: auto;
+  padding-inline: 15px;
+}
+
+/* ─── панель ─── */
+/* Оформление по design_system 7: фон секции, обводка 1px цветом фона страницы
+   (работает микрозазором, а не рамкой), радиус на все четыре угла, тени нет.
+   Радиус рваный, три ступени 46 / 26 / 14 — токен объявлен в ЗОНЕ A, здесь важен
+   фолбэк: он ступенями не выражается, поэтому объявляется трижды, повторяя форму
+   объявления токена (два блока max-width — в конце файла секции). */
+.sw-catalog__panel {
+  container-type: inline-size;
+  container-name: sw-panel;
+  padding-inline: clamp(14px, 4.2vw, 30px);
+  padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
+  border: 1px solid var(--sw-color-bg-page, #F4F5F5);
+  border-radius: var(--sw-radius-lg, 46px);
+}
+
+/* ─── опорный контейнер зон ─── */
+/* Чистый измерительный узел, как sw-benefits__main и sw-about__main: своих
+   padding, border и margin нет, ширина равна внутренней ширине панели. */
+.sw-catalog__main {
+  container-type: inline-size;
+  container-name: sw-main;
+}
+
+/* ─── раскладка зон ─── */
+/* Компактное состояние: одна колонка, элементы идут потоком в порядке DOM —
+   лид, лейбл, фильтры, выделенная область. Вертикальные зазоры здесь задаются
+   margin-top на самих элементах, а не row-gap: у трёх стыков зазоры разные.
+   minmax(0, 1fr), а не 1fr: минимум колонки должен быть нулевым, иначе длинное
+   название в карточке распёрло бы грид и дало горизонтальный скролл. */
+.sw-catalog__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 0;
+  column-gap: 0;
+}
+
+/* ─── лид ─── */
+/* H2 секции (CLAUDE.md 7): видимый заголовок есть на всех ширинах, скрытого
+   дубля не требуется. Разбивка на две строки фиксирована двумя блочными span,
+   а не <br>: перенос остаётся частью потока, и SplitText считает по ним ровно
+   две строки. Тег остаётся настоящим h2 и после сплита (PRD 12.1, SEO-2).
+   Кегль — min(доля контейнера, потолок шкалы), одна формула на все ширины:
+   ровно то же, что у sw-about__lead. Плоская строка перед min() — приём двойного
+   объявления: браузер без контейнерных единиц (Chrome <105, Safari <16,
+   Firefox <110) отбрасывает вторую строку целиком и остаётся на шкале.
+   Интерлиньяж безразмерный: при кегле из min() пиксельный разъехался бы. */
+.sw-catalog__lead {
+  margin: 0;
+  padding: 0;
+  color: var(--sw-color-text, #242424);
+  font-size: var(--sw-fs-5, 78px);
+  font-size: min(8cqi, var(--sw-fs-5, 78px));
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-5, 1.10);
+}
+
+.sw-catalog__lead-line { display: block; }
+
+/* Классы узлов, сгенерированных SplitText. Заданы явно через linesClass и
+   charsClass: дефолтные имена плагина не под нашим контролем.
+   Механика заливки — как у sw-benefits__char и sw-about__char: градиент живёт
+   на СИМВОЛЕ, граница резкая и проходит сквозь него, проценты подставляет
+   поведение секции. -webkit-background-clip обязателен рядом с background-clip:
+   без префикса в WebKit текст станет невидимым.
+   Правило применяется только к сгенерированным узлам: их нет — лид стоит
+   в финальном цвете, что и требуется на ≤768 и при reduced-motion. */
+.sw-catalog__char {
+  --sw-catalog-fill: 0%;
+  background-image: linear-gradient(90deg,
+    var(--sw-color-text, #242424) 0 var(--sw-catalog-fill),
+    var(--sw-color-text-prefill, #D3D3D3) var(--sw-catalog-fill) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ─── лейбл ─── */
+/* Декоративная метка, заголовочным тегом не является.
+   Ширина — в em, не в px и не в % (2.9, правило 2): при пропорциональном кегле
+   только em делает разбивку на строки независимой от ширины экрана. 11em на
+   ≥769 дают три строки — столько же, сколько на обоих десктопных кадрах.
+   На 426…768 ограничения нет вовсе: строка одна, как на кадре 768.
+   Значения предварительные: текст финальный, но разбивка проверяется замером,
+   а не расчётом (2.9, правило 6). */
+.sw-catalog__label {
+  margin: clamp(16px, 2.9vw, 22px) 0 0;
+  padding: 0;
+  color: var(--sw-color-text-muted, #8F8F8F);
+  font-size: var(--sw-fs-1, 24px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-1, 1.30);
+}
+
+/* ─── ряд фильтров ─── */
+/* Строка с переносом на всех ширинах: сколько пилюль встанет в ряд, решает их
+   собственная ширина по контенту — отдельных запросов не требуется. */
+.sw-catalog__filters {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin: clamp(20px, 2.9vw, 22px) 0 0;
+  padding: 0;
+  row-gap: clamp(6px, 1.3vw, 10px);
+  column-gap: clamp(8px, 1.3vw, 10px);
+}
+
+/* Пилюля. Геометрия — из sw-benefits__tab: все внутренние метрики в em от
+   собственного кегля, поэтому иконка, зазор и padding масштабируются одной
+   величиной. Высоту даёт контент; min-height: 44px держит тач-минимум PRD 14.
+   Грид из двух колонок: ячейка иконки и ячейка подписи. Обе иконки лежат
+   в ОДНОЙ ячейке 1/1 и переключаются прозрачностью — так оба файла остаются
+   в потоке и загружаются сразу, мигания при первом переключении нет.
+   display: none у неактивной иконки этого не дал бы: ленивое изображение внутри
+   display: none браузер не грузит до показа.
+   Стили UA-кнопки снимаются явно: сброса в проекте нет.
+   Кегль объявлен дважды по той же причине, что у лида. Доля 3.8cqi берётся
+   от sw-main — ряд пилюль идёт во всю ширину панели на всех трёх раскладках,
+   в отличие от SEC-3, где пилюли стоят в колонке 25% и потому берут 1.9cqi.
+   На 2560 обе секции сходятся в одном значении 32px: там управление
+   перехватывает потолок шкалы.
+   Минимум 12px — нижний порог читаемости (design_system 2.2). */
+.sw-catalog__filter {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0.95em 1.15em;
+  border: 0;
+  border-radius: var(--sw-radius-pill, 999px);
+  column-gap: 0.55em;
+  background: var(--sw-color-bg-page, #F4F5F5);
+  color: var(--sw-color-text, #242424);
+  font-family: inherit;
+  font-size: var(--sw-fs-3, 32px);
+  font-size: clamp(12px, 3.8cqi, var(--sw-fs-3, 32px));
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-3, 1.24);
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  transition:
+    background-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+    color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* Обе иконки в одну ячейку грида — стопкой, без absolute и без лишней обёртки.
+   1.3em против 1.1em в SEC-3: иконка фильтра каталога крупнее (бриф секции). */
+.sw-catalog__filter-icon {
+  grid-area: 1 / 1;
+  display: block;
+  width: 1.3em;
+  height: 1.3em;
+  transition: opacity var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-catalog__filter-icon--dark { opacity: 1; }
+
+.sw-catalog__filter-icon--light { opacity: 0; }
+
+.sw-catalog__filter-label {
+  grid-area: 1 / 2;
+  display: block;
+}
+
+/* Выбранный фильтр. Отдельного hover у него нет — состояние совпадает
+   с выбранным, поэтому конфликта с блоком hover ниже не возникает. */
+.sw-catalog__filter[aria-pressed="true"] {
+  background: var(--sw-color-text, #242424);
+  color: var(--sw-color-bg-section, #FFFFFF);
+}
+
+.sw-catalog__filter[aria-pressed="true"] .sw-catalog__filter-icon--dark { opacity: 0; }
+.sw-catalog__filter[aria-pressed="true"] .sw-catalog__filter-icon--light { opacity: 1; }
+
+/* ─── выделенная область ─── */
+/* Подложка каталога, цвет фона страницы — тот же приём, что у карточки SEC-3.
+   Радиус — кламп, и cqi здесь считается от sw-main: собственного container-type
+   область не объявляет, поэтому её cqi резолвится к ближайшему предку-контейнеру.
+   Коэффициенты взяты у sw-benefits__card и дают те же 14px на 320 и 32px на 2560,
+   потому что опорная коробка у обеих секций по ширине одна и та же.
+   Свободный член в интерполяции есть: это геометрия подложки, а не размер
+   контента, запрет 2.9 на него не распространяется.
+   Двойное объявление: первая строка — плоский фолбэк для браузеров без cqi. */
+.sw-catalog__board {
+  margin-top: clamp(36px, 10.8vw, 48px);
+  padding: clamp(14px, 1.6vw, 41px);
+  border-radius: 32px;
+  border-radius: clamp(14px, calc(0.88844cqi + 11.69px), 32px);
+  background: var(--sw-color-bg-page, #F4F5F5);
+}
+
+/* ─── сетка карточек ─── */
+/* Две колонки на ≤768, три на ≥769 (бриф секции). Расхождение с таблицей
+   design_system 7 (4 / 3 / 2) — долг документации.
+   gap пропорциональный, а не плоский --sw-space-24: 2.9 требует доли вьюпорта,
+   верх шкалы 26px совпадает с токеном по величине. */
+.sw-catalog__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 1vw, 26px);
+}
+
+/* ─── карточка ─── */
+/* Собственного фона, рамки и тени не имеет (ответ 6): лежит прямо на выделенной
+   области. Отступление от design_system 6.6 зафиксировано брифом — там карточка
+   описана как белая панель с тенью и как целиком интерактивный элемент.
+   Интерактивна здесь только кнопка: вложить button в ссылку нельзя, разметка
+   стала бы невалидной, а таб-порядок — сломанным.
+   container-type: inline-size — от ширины карточки считаются радиус фото и её
+   внутренний зазор. container-name не объявляется намеренно: контейнерных
+   запросов секция не использует, а свободное имя не должно пересекаться
+   с sw-card соседних секций.
+   Скрытие — атрибутом hidden; сам по себе он перебивается любым display в CSS,
+   поэтому display: none задан явно. */
+.sw-catalog__card {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+.sw-catalog__card[hidden] { display: none; }
+
+/* ─── фото: оно же цель клика ─── */
+/* Соотношение 3/4 — вертикальное (ответ 7). Расхождение с design_system 10
+   (4/3) — долг документации; исходники в /Materials/Catalog вертикальные,
+   и кроп на фактуре камня незаметен.
+   aspect-ratio + width/height у img закрывают CLS: место под фото зарезервировано
+   до загрузки. overflow: hidden держит и скругление, и scale фото на hover —
+   внутри него фото уезжает, не сдвигая соседей.
+
+   ЭТОТ УЗЕЛ — <a>, А НЕ ОБЁРТКА. Кликается всё фото целиком, метка «Выбрать»
+   в углу — его визуальный признак, а не отдельный контрол. Кнопку внутрь ссылки
+   вложить нельзя: вложенные интерактивные элементы дают невалидную разметку
+   и ломают таб-порядок, поэтому метка — span.
+   Следствие для тач-минимума PRD 14: целью стало фото (от 103×138 на 320),
+   и собственная высота 44px метке больше не нужна — она неинтерактивна.
+   Доступное имя ссылки несёт aria-label; в него входит видимая метка «Выбрать»
+   (WCAG 2.5.3 «Label in Name»). alt фотографии остаётся заполненным (SEO-4),
+   но в озвучке ссылки его перекрывает aria-label.
+   text-decoration и подсветка тапа снимаются явно: сброса в проекте нет. */
+.sw-catalog__media {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 20px;
+  border-radius: clamp(10px, 2.8cqi, 20px);
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.sw-catalog__photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  object-position: center;
+  transition: transform var(--sw-dur-base, 250ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* ─── название ─── */
+/* Настоящий h3 (SEO-2, CLAUDE.md 7): уровень внутри секции, H2 несёт лид.
+   Стоит под фото и занимает всю ширину карточки: метка уехала на фото, делить
+   с ней ряд больше не с кем. Верхний зазор — доля ширины карточки, замер
+   по образцу card.png (3,8%). */
+.sw-catalog__title {
+  margin: clamp(8px, 3.8cqi, 27px) 0 0;
+  padding: 0;
+  color: var(--sw-color-text, #242424);
+  font-size: var(--sw-fs-3, 32px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-3, 1.24);
+}
+
+/* ─── метка «Выбрать» и кнопка «Показать ещё» ─── */
+/* Оформление одно на оба элемента (ответ 12: по визуалу они одинаковы), но
+   природа у них разная: в карточке это НЕметка на ссылке-фото (span), внизу —
+   настоящий button. Поэтому общий здесь только внешний вид, а состояния и кегль
+   разведены ниже.
+   Вариант design_system 6.7: ведёт на якорь внутри страницы, виртуальной
+   страницы не создаёт, своей цели аналитики не имеет (PRD 11). Цвета оттуда
+   дословно. Отличия, все сознательные и совпадающие с решениями Портфолио:
+     — радиус не литеральные 24 / 12px из 6.7, а кламп clamp(10px, 1.1vw, 18px)
+       (ответ 5): ступенька на границе рядом со скруглением выделенной области
+       читалась бы как чужой элемент;
+     — высота не задаётся клампом, её даёт контент через padding в em; верх шкалы
+       120px в 6.7 задан композицией Hero (кнопка во всю ширину панели) и сюда
+       не переносится;
+     — инверсия цветов на ≤425 НЕ переносится: элемент лежит на фото и на светлой
+       подложке, светлая заливка сделала бы его невидимым.
+   Стили UA-кнопки и подчёркивание снимаются явно: сброса в проекте нет. */
+.sw-catalog__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 1em 1.4em;
+  border: 0;
+  border-radius: clamp(10px, 1.1vw, 18px);
+  background: var(--sw-color-cta, #242424);
+  color: var(--sw-color-text-on-cta, #FFFFFF);
+  font-family: inherit;
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-3, 1.24);
+  text-align: center;
+  text-decoration: none;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  transition: background-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* Метка в правом нижнем углу фото.
+   КЕГЕЛЬ — ДОЛЯ ШИРИНЫ КАРТОЧКИ, А НЕ СТУПЕНЬ ШКАЛЫ. Прежний --sw-fs-2 задавал
+   размер от вьюпорта, а метка лежит внутри карточки, ширина которой постоянной
+   долей вьюпорта не является: на 1440 три колонки давали карточку 396px, и метка
+   на ступени шкалы (20px) закрывала фото почти на треть ширины. Доля 3.9cqi
+   держит её постоянным процентом фотографии на всех ширинах и на 2560 совпадает
+   с прежним значением 28px.
+   Минимум 12px — нижний порог читаемости (design_system 2.2). Тач-минимума
+   у метки нет и быть не должно: она неинтерактивна, целью клика служит всё фото.
+   Отступ от углов — та же доля карточки. */
+.sw-catalog__media .sw-catalog__cta {
+  position: absolute;
+  right: clamp(6px, 2.2cqi, 16px);
+  bottom: clamp(6px, 2.2cqi, 16px);
+  font-size: clamp(12px, 3.9cqi, 28px);
+  pointer-events: none;
+}
+
+/* Кнопка раскрытия. Кегль тот же по величине, но доля берётся от sw-main:
+   кнопка стоит вне карточки, и своей коробки-контейнера у неё нет. 1.22cqi
+   от внутренней ширины панели равны 3.9cqi карточки на всех ширинах, где
+   в ряду три колонки, — метки и кнопка совпадают по кеглю.
+   min-height: 44px здесь ОСТАЁТСЯ: это настоящий контрол и настоящая тач-цель. */
+.sw-catalog__cta--more {
+  min-height: 44px;
+  font-size: clamp(12px, 1.22cqi, 28px);
+  cursor: pointer;
+}
+
+/* :active объявлен без условия (hover: hover) — на тач-устройстве это
+   единственный отклик на нажатие; на iOS Safari к нему нужен слушатель касания
+   на самом элементе, он в поведении секции. У карточки нажатие ловит ссылка-фото,
+   а красится вложенная метка. */
+.sw-catalog__media:active .sw-catalog__cta,
+.sw-catalog__cta--more:active {
+  background: var(--sw-color-link-hover, #A68A73);
+}
+
+/* ─── «Показать ещё» ─── */
+/* Ряд с кнопкой стоит после сетки, внутри выделенной области. В разметке несёт
+   hidden: без скрипта показаны ВСЕ карточки, и кнопке нечего раскрывать —
+   секция обязана переживать отсутствие JS без потери контента. Показывает её
+   поведение секции, когда само же и урезало список.
+   Зазор до сетки — двойной gap сетки: на одинарном кнопка вставала вплотную
+   к нижнему ряду карточек и читалась как их часть, а не как отдельное действие. */
+.sw-catalog__more {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(20px, 2vw, 52px);
+}
+
+.sw-catalog__more[hidden] { display: none; }
+
+/* ─── фокус ─── */
+/* Кольцо 1px на пилюле: на неактивной тёмное со смещением 3px — тем же, что
+   в GlobalHeader, Hero и SEC-3. На выбранной кольцо белое и смещение
+   ОТРИЦАТЕЛЬНОЕ: со смещением наружу белое кольцо легло бы на белую панель
+   и стало невидимым.
+   У кнопок кольцо 2px по design_system 6.7. */
+.sw-catalog__filter:focus-visible {
+  outline: 1px solid var(--sw-color-focus, #242424);
+  outline-offset: 3px;
+}
+
+.sw-catalog__filter[aria-pressed="true"]:focus-visible {
+  outline: 1px solid var(--sw-color-focus-on-dark, #FFFFFF);
+  outline-offset: -4px;
+}
+
+/* У карточки фокусируется ссылка-фото, а не метка: метка неинтерактивна и
+   в таб-порядок не попадает. Кольцо обводит фотографию целиком. */
+.sw-catalog__media:focus-visible,
+.sw-catalog__cta--more:focus-visible {
+  outline: 2px solid var(--sw-color-focus, #242424);
+  outline-offset: 3px;
+}
+
+/* ─── hover ─── */
+/* Только под (hover: hover) и с 769: на тач-устройстве состояние залипает.
+
+   :ACTIVE КНОПКИ ПРОДУБЛИРОВАН ВНУТРИ ЭТОГО БЛОКА, И ЭТО НЕ ОПЕЧАТКА.
+   Базовое :active объявлено выше, без условия (hover: hover) — на тач-устройстве
+   это единственный отклик на нажатие, и там оно работает. Но у :hover и :active
+   одна специфичность (0,2,0), а при равенстве решает порядок: на десктопе
+   нажатие всегда идёт вместе с наведением, и объявленный ниже :hover перекрыл бы
+   цвет нажатия. Дубль стоит последним в блоке и возвращает приоритет нажатию.
+   Карточка: единственное движение — фото внутри overflow: hidden. Подъёма
+   и тени нет, потому что у карточки нет собственной подложки. */
+@media (hover: hover) and (min-width: 769px) {
+  .sw-catalog__filter:hover {
+    background: var(--sw-color-text, #242424);
+    color: var(--sw-color-bg-section, #FFFFFF);
+  }
+
+  .sw-catalog__filter:hover .sw-catalog__filter-icon--dark { opacity: 0; }
+  .sw-catalog__filter:hover .sw-catalog__filter-icon--light { opacity: 1; }
+
+  .sw-catalog__media:hover .sw-catalog__cta,
+  .sw-catalog__cta--more:hover {
+    background: var(--sw-color-cta-hover, #0D0D0D);
+  }
+
+  .sw-catalog__media:active .sw-catalog__cta,
+  .sw-catalog__cta--more:active {
+    background: var(--sw-color-link-hover, #A68A73);
+  }
+
+  .sw-catalog__media:hover .sw-catalog__photo {
+    transform: scale(1.03);
+  }
+}
+
+/* ─── 769px и выше: метрики страницы и композиция в две колонки ─── */
+/* Здесь 768/769 работает сразу в двух ролях — метрической и композиционной,
+   в отличие от SEC-3, где их пришлось разводить по разным медиазапросам.
+   Вертикальные зазоры зон переезжают с margin компактного состояния на свои
+   значения; row-gap грида при этом остаётся нулевым, потому что зазоры у трёх
+   стыков разные, а margin грид-элемента с ним не схлопывается. */
+@media (min-width: 769px) {
+  .sw-catalog__container {
+    padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
+  }
+
+  .sw-catalog__panel {
+    padding-inline: clamp(55px, 3.77vw, 96px);
+    padding-block: clamp(57px, 7.45vw, 190px);
+  }
+
+  .sw-catalog__grid {
+    grid-template-columns: minmax(0, 1fr) 34%;
+    grid-template-areas:
+      "lead     label"
+      "filters  filters"
+      "board    board";
+  }
+
+  .sw-catalog__lead { grid-area: lead; }
+
+  /* Верхние кромки лейбла и лида совпадают — так на обоих десктопных кадрах.
+     Без align-self лейбл растянулся бы на высоту строки и его первая строка
+     осталась бы на месте, но фон и возможные будущие правки поехали бы. */
+  .sw-catalog__label {
+    grid-area: label;
+    align-self: start;
+    max-width: 11em;
+    margin: 0;
+  }
+
+  .sw-catalog__filters {
+    grid-area: filters;
+    margin-top: clamp(50px, 3.6vw, 95px);
+  }
+
+  .sw-catalog__board {
+    grid-area: board;
+    margin-top: clamp(24px, 1.6vw, 41px);
+  }
+
+  .sw-catalog__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ─── 1025px и выше: зоны шапки меняются местами ─── */
+/* Вторая граница перестроения. Лейбл возвращается в левую колонку, лид — в
+   правую. Левая колонка ровно 25% внутренней ширины панели: доля подтверждена
+   кадром 2560 — лид стартует на 27,66% вьюпорта, и расчёт даёт ту же величину.
+   column-gap нулевой намеренно: воздух между зонами образуется тем, что лейбл
+   ýже своей колонки (max-width в em), а не зазором грида.
+   Отбивка ряда пилюль — «чуть правее начала блока лейбл-текста» по брифу.
+   1.5cqi считается от sw-main: 34px на 2560, 13px на 1025. */
+@media (min-width: 1025px) {
+  .sw-catalog__grid {
+    grid-template-columns: 25% minmax(0, 1fr);
+    grid-template-areas:
+      "label    lead"
+      "filters  filters"
+      "board    board";
+  }
+
+  .sw-catalog__filters {
+    padding-left: 1.5cqi;
+  }
+}
+
+/* ─── 425px и ниже: лейбл ломается на две строки ─── */
+/* Граница зарегистрирована в design_system 2.7, здесь задана независимо от Hero
+   и Портфолио. Естественным переносом эта разбивка не получается: расчёт даёт
+   слом только около 325px, то есть ниже всех ходовых ширин телефонов. */
+@media (max-width: 425px) {
+  .sw-catalog__label {
+    max-width: 13em;
+  }
+}
+
+/* ─── 1024px и ниже: средняя ступень радиуса панели ─── */
+/* Оба блока ниже — про радиус панели и только про него. Границы взяты из
+   объявления токена --sw-radius-lg в ЗОНЕ A и повторяют его форму. Порядок
+   обязателен: на 375 верны оба запроса, и решает последний. */
+@media (max-width: 1024px) {
+  .sw-catalog__panel { border-radius: var(--sw-radius-lg, 26px); }
+}
+
+/* ─── 375px и ниже: нижняя ступень радиуса панели ─── */
+@media (max-width: 375px) {
+  .sw-catalog__panel { border-radius: var(--sw-radius-lg, 14px); }
+}
+
+/* ─── prefers-reduced-motion ─── */
+/* Заливка лида не запускается вовсе — это решается в поведении секции через
+   gsap.matchMedia(). Здесь глушатся переходы состояний. */
+@media (prefers-reduced-motion: reduce) {
+  .sw-catalog__filter,
+  .sw-catalog__filter-icon,
+  .sw-catalog__photo,
+  .sw-catalog__cta { transition: none; }
 }
 </style>
 <!-- разметка — секция Каталог -->
-<section class="sw-catalog" id="sw-catalog" data-sw-scaffold>
-  <div class="sw-catalog__container"></div>
+<!-- Пять фильтров и двадцать карточек. Связь фильтр↔карточка — по совпадающим
+     значениям data-sw-filter и data-sw-group; «Все» несёт служебное значение all.
+     Начальное состояние: активен первый фильтр, показаны все карточки — урезание
+     списка и кнопку «Показать ещё» включает поведение секции, поэтому без скрипта
+     каталог виден целиком.
+     Обе иконки каждого фильтра лежат в разметке постоянно и переключаются
+     прозрачностью: по событию не подгружаются, иначе первое переключение дало бы
+     пустой кадр. Иконки декоративны — alt пустой и aria-hidden, доступное имя
+     кнопки несёт подпись.
+     Названия позиций — канон пользователя (бриф секции, ответ 1). Они же уедут
+     в значения опций селекта формы: контракт 1 требует посимвольного совпадения
+     (PRD 10). Расхождение с именами файлов в /Materials/Catalog — долг
+     документации к PRD 10.1.
+     alt собран по шаблону CLAUDE.md: «Каменный ковёр {название} - укладка
+     в Сочи и Краснодаре». loading="lazy" — секция не первый экран (NFR-4).
+     ANL: у кнопок «Выбрать» появляется точка reachGoal по ANL-3, имя цели
+     не назначено — вызова нет, стоит маркер. -->
+<section class="sw-catalog" id="sw-catalog">
+  <div class="sw-catalog__container">
+    <div class="sw-catalog__panel">
+      <div class="sw-catalog__main">
+        <div class="sw-catalog__grid">
+
+          <!-- H2 секции. Разбивка на две строки фиксирована: два блочных span,
+               <br> не ставится. Перенос строки между span оставлен намеренно —
+               без него скринридер и поисковик получили бы «решениядля». -->
+          <h2 class="sw-catalog__lead">
+            <span class="sw-catalog__lead-line">Декоративные решения</span>
+            <span class="sw-catalog__lead-line">для любого стиля</span>
+          </h2>
+
+          <p class="sw-catalog__label">Фактуры и оттенки для воплощения ваших идей</p>
+
+          <div class="sw-catalog__filters">
+
+            <button class="sw-catalog__filter" type="button" data-sw-filter="all" aria-pressed="true">
+              <img class="sw-catalog__filter-icon sw-catalog__filter-icon--dark"
+                   src="https://static.tildacdn.com/tild3638-6232-4535-b563-623934306661/All_242424.svg"
+                   alt="" aria-hidden="true" loading="lazy">
+              <img class="sw-catalog__filter-icon sw-catalog__filter-icon--light"
+                   src="https://static.tildacdn.com/tild3636-3165-4633-b939-663936366136/All_bebebe.svg"
+                   alt="" aria-hidden="true" loading="lazy">
+              <span class="sw-catalog__filter-label">Все</span>
+            </button>
+
+            <button class="sw-catalog__filter" type="button" data-sw-filter="Галька" aria-pressed="false">
+              <img class="sw-catalog__filter-icon sw-catalog__filter-icon--dark"
+                   src="https://static.tildacdn.com/tild6237-6635-4334-b739-336365386333/Pebbles_242424.svg"
+                   alt="" aria-hidden="true" loading="lazy">
+              <img class="sw-catalog__filter-icon sw-catalog__filter-icon--light"
+                   src="https://static.tildacdn.com/tild3331-3436-4739-a533-343439653262/Pebbles_bebebe.svg"
+                   alt="" aria-hidden="true" loading="lazy">
+              <span class="sw-catalog__filter-label">Галька</span>
+            </button>
+
+            <button class="sw-catalog__filter" type="button" data-sw-filter="Гранит" aria-pressed="false">
+              <img class="sw-catalog__filter-icon sw-catalog__filter-icon--dark"
+                   src="https://static.tildacdn.com/tild3037-3565-4634-a432-386633316366/Granite_242424.svg"
+                   alt="" aria-hidden="true" loading="lazy">
+              <img class="sw-catalog__filter-icon sw-catalog__filter-icon--light"
+                   src="https://static.tildacdn.com/tild6162-6639-4465-a165-313436356431/Granite_bebebe.svg"
+                   alt="" aria-hidden="true" loading="lazy">
+              <span class="sw-catalog__filter-label">Гранит</span>
+            </button>
+
+            <button class="sw-catalog__filter" type="button" data-sw-filter="Мрамор" aria-pressed="false">
+              <img class="sw-catalog__filter-icon sw-catalog__filter-icon--dark"
+                   src="https://static.tildacdn.com/tild6634-3961-4064-b661-313131343966/Marble_242424.svg"
+                   alt="" aria-hidden="true" loading="lazy">
+              <img class="sw-catalog__filter-icon sw-catalog__filter-icon--light"
+                   src="https://static.tildacdn.com/tild3238-3630-4262-b563-656362656431/Marble_bebebe.svg"
+                   alt="" aria-hidden="true" loading="lazy">
+              <span class="sw-catalog__filter-label">Мрамор</span>
+            </button>
+
+            <button class="sw-catalog__filter" type="button" data-sw-filter="Кварцит" aria-pressed="false">
+              <img class="sw-catalog__filter-icon sw-catalog__filter-icon--dark"
+                   src="https://static.tildacdn.com/tild3134-3432-4566-b530-386536613766/Calcite_242424.svg"
+                   alt="" aria-hidden="true" loading="lazy">
+              <img class="sw-catalog__filter-icon sw-catalog__filter-icon--light"
+                   src="https://static.tildacdn.com/tild6663-6530-4061-a663-633237613731/Calcite_bebebe.svg"
+                   alt="" aria-hidden="true" loading="lazy">
+              <span class="sw-catalog__filter-label">Кварцит</span>
+            </button>
+
+          </div>
+
+          <div class="sw-catalog__board">
+            <div class="sw-catalog__list">
+
+              <article class="sw-catalog__card" data-sw-group="Галька">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Берег крыма" aria-label="Выбрать материал Берег крыма">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild6563-3064-4165-b038-363132666135/_.webp"
+                       alt="Каменный ковёр Берег крыма - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Берег крыма</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Галька">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Дагестан" aria-label="Выбрать материал Дагестан">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3839-3030-4863-a435-353135336437/photo.webp"
+                       alt="Каменный ковёр Дагестан - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Дагестан</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Галька">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Жемчуг крыма" aria-label="Выбрать материал Жемчуг крыма">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild6131-6566-4431-b132-343263646132/_.webp"
+                       alt="Каменный ковёр Жемчуг крыма - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Жемчуг крыма</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Галька">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Каспий" aria-label="Выбрать материал Каспий">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3235-6334-4265-a337-663432323137/photo.webp"
+                       alt="Каменный ковёр Каспий - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Каспий</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Галька">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Красное море" aria-label="Выбрать материал Красное море">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild6331-6631-4263-a233-643837343462/_.webp"
+                       alt="Каменный ковёр Красное море - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Красное море</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Мрамор">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Мрамор белый" aria-label="Выбрать материал Мрамор белый">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3036-6535-4639-b636-393735343331/_.webp"
+                       alt="Каменный ковёр Мрамор белый - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Мрамор белый</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Мрамор">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Мрамор микс(светлый)" aria-label="Выбрать материал Мрамор микс(светлый)">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3963-3036-4638-b164-343139613239/__.webp"
+                       alt="Каменный ковёр Мрамор микс(светлый) - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Мрамор микс(светлый)</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Мрамор">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Мрамор микс 1(тёмный)" aria-label="Выбрать материал Мрамор микс 1(тёмный)">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3532-3034-4130-b764-626538303835/__1_.webp"
+                       alt="Каменный ковёр Мрамор микс 1(тёмный) - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Мрамор микс 1(тёмный)</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Мрамор">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Мрамор микс 3" aria-label="Выбрать материал Мрамор микс 3">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3136-3335-4532-b532-653237636635/__3.webp"
+                       alt="Каменный ковёр Мрамор микс 3 - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Мрамор микс 3</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Мрамор">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Мрамор розовый" aria-label="Выбрать материал Мрамор розовый">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild6638-6664-4233-b837-633833666338/_.webp"
+                       alt="Каменный ковёр Мрамор розовый - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Мрамор розовый</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Мрамор">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Мрамор серый" aria-label="Выбрать материал Мрамор серый">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3534-3962-4638-b932-623963313035/_.webp"
+                       alt="Каменный ковёр Мрамор серый - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Мрамор серый</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Мрамор">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Мраморное море(бронза)" aria-label="Выбрать материал Мраморное море(бронза)">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3535-3763-4234-b666-303335646437/__.webp"
+                       alt="Каменный ковёр Мраморное море(бронза) - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Мраморное море(бронза)</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Мрамор">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Мраморное море(золото)" aria-label="Выбрать материал Мраморное море(золото)">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3333-6164-4030-a539-633732393366/__.webp"
+                       alt="Каменный ковёр Мраморное море(золото) - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Мраморное море(золото)</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Мрамор">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Мраморное море(серебро)" aria-label="Выбрать материал Мраморное море(серебро)">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3730-3338-4636-b938-616537386163/__.webp"
+                       alt="Каменный ковёр Мраморное море(серебро) - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Мраморное море(серебро)</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Галька">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Ореховая роща" aria-label="Выбрать материал Ореховая роща">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild6463-3734-4465-b337-396537633734/_.webp"
+                       alt="Каменный ковёр Ореховая роща - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Ореховая роща</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Гранит">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Северное море" aria-label="Выбрать материал Северное море">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild6363-3631-4861-b637-363265626466/_.webp"
+                       alt="Каменный ковёр Северное море - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Северное море</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Кварцит">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Скала" aria-label="Выбрать материал Скала">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3038-3739-4162-b931-316432323132/photo.webp"
+                       alt="Каменный ковёр Скала - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Скала</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Галька">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Чёрное море" aria-label="Выбрать материал Чёрное море">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3062-6235-4134-b933-316364626536/_.webp"
+                       alt="Каменный ковёр Чёрное море - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Чёрное море</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Мрамор">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Чёрный мрамор" aria-label="Выбрать материал Чёрный мрамор">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3938-3539-4664-b332-366337633366/_.webp"
+                       alt="Каменный ковёр Чёрный мрамор - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Чёрный мрамор</h3>
+              </article>
+
+              <article class="sw-catalog__card" data-sw-group="Галька">
+                <!-- ANL: имя цели не назначено -->
+                <a class="sw-catalog__media" href="#sw-form" data-sw-material="Южный берег" aria-label="Выбрать материал Южный берег">
+                  <img class="sw-catalog__photo"
+                       src="https://static.tildacdn.com/tild3437-3232-4964-a239-373434373130/_.webp"
+                       alt="Каменный ковёр Южный берег - укладка в Сочи и Краснодаре"
+                       loading="lazy">
+                  <span class="sw-catalog__cta">Выбрать</span>
+                </a>
+                <h3 class="sw-catalog__title">Южный берег</h3>
+              </article>
+
+            </div>
+
+            <!-- Кнопка раскрытия списка. hidden снимает поведение секции, когда
+                 само же урезало список: без скрипта карточки показаны все, и
+                 кнопке нечего раскрывать. -->
+            <div class="sw-catalog__more" hidden>
+              <button class="sw-catalog__cta sw-catalog__cta--more" type="button">Показать ещё</button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 <!-- ═══════ T123 · СЕКЦИЯ: Каталог (SEC-5) — конец ═══════ -->
 
@@ -3476,7 +4422,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
      рядом. Видео — iframe Kinescope в фоновом режиме (background=1: без
      контролов, autoplay, muted, loop одним параметром); title обязателен, это
      доступное имя фрейма. loading="lazy" — секция не первый экран (NFR-4).
-     ANL: у кнопки «Перейти к каталогу» появляется точка reachGoal по ANL-3,
+     ANL: у кнопки «Обсудить проект» появляется точка reachGoal по ANL-3,
      имя цели не назначено — вызова нет, стоит маркер. -->
 <section class="sw-portfolio" id="sw-portfolio">
   <div class="sw-portfolio__container">
@@ -3516,7 +4462,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
               <p class="sw-portfolio__description">Покрытие уложено на ступенях и прилегающей территории</p>
               <div class="sw-portfolio__action">
                 <!-- ANL: имя цели не назначено -->
-                <a class="sw-portfolio__cta" href="#sw-catalog">Перейти к каталогу</a>
+                <a class="sw-portfolio__cta" href="#sw-form">Обсудить проект</a>
               </div>
             </div>
 
@@ -3579,7 +4525,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
               <p class="sw-portfolio__description">Покрытие уложено на всех садовых дорожках</p>
               <div class="sw-portfolio__action">
                 <!-- ANL: имя цели не назначено -->
-                <a class="sw-portfolio__cta" href="#sw-catalog">Перейти к каталогу</a>
+                <a class="sw-portfolio__cta" href="#sw-form">Обсудить проект</a>
               </div>
             </div>
 
@@ -3642,7 +4588,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
               <p class="sw-portfolio__description">Полностью благоустроена придомовая территория: уложено покрытие на подъездной дорожке, ступенях, садовых дорожках и в зоне клумб</p>
               <div class="sw-portfolio__action">
                 <!-- ANL: имя цели не назначено -->
-                <a class="sw-portfolio__cta" href="#sw-catalog">Перейти к каталогу</a>
+                <a class="sw-portfolio__cta" href="#sw-form">Обсудить проект</a>
               </div>
             </div>
 
@@ -3705,7 +4651,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
               <p class="sw-portfolio__description">Выполнены работы по устройству покрытия на всех балконах здания</p>
               <div class="sw-portfolio__action">
                 <!-- ANL: имя цели не назначено -->
-                <a class="sw-portfolio__cta" href="#sw-catalog">Перейти к каталогу</a>
+                <a class="sw-portfolio__cta" href="#sw-form">Обсудить проект</a>
               </div>
             </div>
 
@@ -3795,22 +4741,1089 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 <!-- ═══════ T123 · СЕКЦИЯ: Форма заявки (SEC-9) — начало ═══════ -->
 <style>
 /* стиль — секция Форма заявки */
+
+/* box-sizing — посекционно, первой строкой. Потомковый * не выходит за контейнер. */
 .sw-form,
 .sw-form *,
 .sw-form *::before,
 .sw-form *::after { box-sizing: border-box; }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   ГРАНИЦЫ СЕКЦИИ.
+   768 / 769 — единственное перестроение композиции: две колонки → одна, левая
+   колонка перестаёт быть колонкой, полоса стадий переезжает из её низа в общий
+   поток между подзаголовком и карточкой формы, текст уходит с левого
+   выравнивания на центральное, распорка снимается. Здесь же переключаются
+   метрики страницы — теми же значениями, что у GlobalHeader, Hero, SEC-3…SEC-6.
+   1024 и 375 — не наши: ступени токена --sw-radius-lg. Композиции не касаются.
+   Своих границ секция не заводит.
+   var() в @media не работает — границы литеральные.
+
+   ПОДПИСЬ СТАДИИ МЕНЯЕТ СТОРОНУ, НО НЕ РОДИТЕЛЯ. На ≥769 подпись над фото,
+   на ≤768 — под ним. Это порядок двух узлов внутри одного элемента, решается
+   flex-direction. Второй копии разметки правило «меняет родителя → две копии»
+   здесь не требует: родитель тот же.
+
+   ТИПОГРАФИКА — ступени --sw-fs-1…6 и множители --sw-lh-1…6 из ЗОНЫ A, как
+   в SEC-3…SEC-6. Собственной пропорции у секции нет (решение пользователя).
+   Два места, где ступень подпирается снизу max(), и оба обязательны:
+     — кегль ввода: --sw-fs-2 на ≤768 отдаёт 13…16px, а ниже 16px iOS зумит
+       поле при фокусе (design_system 2.2). Отсюда max(16px, …);
+     — текст согласия и подписи стадий: --sw-fs-1 на 320 отдаёт 11px при пороге
+       читаемости 12px (2.2). Отсюда max(12px, …).
+   РАЗРЫВА ВЕЛИЧИН НА ГРАНИЦЕ У СЕКЦИИ ПРАКТИЧЕСКИ НЕТ, и это не подгонка.
+   Все кегли взяты ступенями, а ступень непрерывна через 768/769 по построению
+   (её якоря — 320/425/768/1440/2560). Скачком меняются только те величины,
+   у которых по обе стороны границы стоят разные клампы: высота поля 53 → 48px,
+   высота кнопки 60 → 48px, padding панели 40 → 36px. Правило 5 из
+   design_system 2.9 нарушенным не оказывается — оно разрешает разрыв, а не
+   требует его.
+
+   ТРИ ЛИТЕРАЛА ВНЕ ПАЛИТРЫ И ШКАЛ, все три — решение пользователя, все три
+   уходят долгом в design_system 12:
+     #787878        обводка чекбокса без галочки (в 6.4 стоит --sw-color-text-muted),
+                    толщина 3px и нулевое скругление — там 1.5px и --sw-radius-sm;
+     #C62F2F        статус-цвет ошибки (2.1 и 11 запрещают заводить статус-цвета);
+     #545454        цвет введённого значения поля (в 2.1 такого цвета текста нет);
+     font-weight 200 подпись стадии (в шкале --sw-fw-* минимум 300).
+   Отмеченный чекбокс тоже расходится с 6.4: там заливка #242424 и белая
+   галочка, здесь заливки нет — меняется цвет обводки, галочка тёмная.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ─── секция ─── */
+/* Собственного фона нет: фон несёт панель, вокруг видна подложка страницы.
+   Нижний зазор до Footer — метрика страницы design_system 7, свободный член
+   в ней допустим (2.9): это посадка секции, а не размер содержимого.
+   scroll-margin-top обязателен и не декоративен: #sw-form — рабочий якорь
+   из четырёх точек (два пункта шапки, кнопка Hero, все 20 карточек каталога),
+   без него переход уедет под фиксированную панель GlobalHeader. Величина —
+   сумма высоты панели и её нижнего зазора, обе строки из раздела 7. */
+/* --sw-form-field-h — локальное вычисление секции, не головной токен
+   (design_system 3 их разрешает). Заведено не ради краткости: высота поля
+   участвует в трёх согласованных величинах сразу — собственно высота, верхний
+   padding под уехавшую метку и вертикальный сдвиг метки. Задай их порознь,
+   и метка с текстом ввода разъедутся на части шкалы: em считается от кегля,
+   высота — от вьюпорта, и пропорции между ними не постоянны. */
+/* ТОЛЩИНА ОБВОДОК — ТРИ ЛОКАЛЬНЫЕ ПЕРЕМЕННЫЕ, И ОНИ ЖЕ ЗАВОДЯТ НОВУЮ ГРАНИЦУ.
+   Ниже 1440px все обводки секции тоньше на 1px: на средних экранах прежняя
+   толщина читается жирной (решение пользователя).
+   ГРАНИЦЫ 1440 В РЕЕСТРЕ design_system 2.7 НЕТ — там 768/769, 1024, 425 и 375.
+   Формально 1440 в проекте уже встречается: это --sw-bp-xl и верхний якорь
+   типографической шкалы в ЗОНЕ A, — но якорь интерполяции границей
+   перестроения не является. Здесь она впервые переключает свойство, и по
+   правилу «границу, отсутствующую в таблице, не заводить» строка обязана
+   попасть в 2.7. Уходит долгом вместе с остальными.
+   Композицию граница не трогает: перестроение по-прежнему одно, по 768. */
 .sw-form {
+  --sw-form-border: 2px;
+  --sw-form-cb-border: 3px;
+  --sw-form-cb-border-error: 2px;
+  --sw-form-field-h: clamp(56px, 4.7vw, 120px);
+  scroll-margin-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+  margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: var(--sw-fs-body, 1rem);
   line-height: var(--sw-lh-body, 1.6);
   color: var(--sw-color-text, #242424);
+}
+
+/* ─── контейнер ─── */
+.sw-form__container {
+  max-width: 2560px;
+  margin-inline: auto;
+  padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
+}
+
+/* ─── панель ─── */
+/* Оформление по design_system 7: фон секции, обводка 1px цветом фона страницы
+   (работает микрозазором, а не рамкой), радиус на все четыре угла, тени нет.
+   Радиус рваный, три ступени 46 / 26 / 14 — токен объявлен в ЗОНЕ A, здесь
+   важен фолбэк: ступенями он не выражается, поэтому объявляется трижды,
+   повторяя форму объявления токена (два блока max-width в конце файла секции).
+   Колонки строго 1fr 1fr: замер даёт карточке 44,2vw на 2560 и 44,4vw на 1440
+   при внутренней ширине панели вдвое больше — то есть ровно половину, ширина
+   числом не задаётся и остаётся производной.
+   align-items: stretch — левая колонка тянется до высоты карточки; именно на
+   этом держится прижатие полосы стадий к низу. */
+.sw-form__panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: clamp(8px, 0.8vw, 26px);
+  align-items: stretch;
+  padding: clamp(28px, 2.9vw, 74px) clamp(36px, 3.7vw, 95px);
   background: var(--sw-color-bg-section, #FFFFFF);
+  border: 1px solid var(--sw-color-bg-page, #F4F5F5);
+  border-radius: var(--sw-radius-lg, 46px);
+}
+
+/* ─── левая колонка ─── */
+.sw-form__intro {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ─── заголовок ─── */
+/* Настоящий h2 (CLAUDE.md 7, PRD SEO-2) — единственный H2 секции, H1 только
+   в Hero.
+   КЕГЛЬ — ЧИСТАЯ СТУПЕНЬ, БЕЗ ОГРАНИЧЕНИЯ ДОЛЕЙ КОНТЕЙНЕРА. Приём
+   min(Ncqi, ступень) из SEC-4 и SEC-6 здесь пробовался и снят по замеру:
+   на 769 колонка равна 321px, и доля отдавала заголовку 19,6px — мельче
+   текста ввода в соседней карточке, с разрывом на границе −53%. Чистая
+   ступень держит 42px на 768 и 42,6px на 769: на этой границе кегль
+   заголовка непрерывен, потому что зона его не меняет — H2 и в одной
+   колонке, и в двух остаётся привязан к ширине вьюпорта. Цена — на 2560
+   заголовок на 13% крупнее кадра референса; это прямое следствие работы
+   в рамках ступеней и принято сознательно.
+   max-width в em, не в px и не в % (design_system 2.9, правило 2): при
+   пропорциональном кегле только em делает разбивку на строки независимой
+   от ширины экрана. Значение проверено на финальном тексте. */
+.sw-form__title {
+  margin: 0;
+  padding: 0;
+  max-width: 14em;
+  color: var(--sw-color-text, #242424);
+  font-size: var(--sw-fs-5, 78px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-5, 1.10);
+}
+
+/* ─── подзаголовок ─── */
+/* Ступень --sw-fs-2 (решение пользователя). Множитель интерлиньяжа взят парный
+   ей — --sw-lh-2: шкала кегля и шкала интерлиньяжа в ЗОНЕ A ходят ступенями
+   под одним номером, и разъехавшаяся пара даёт строки не той плотности. */
+.sw-form__subtitle {
+  margin: clamp(12px, 0.88vw, 22px) 0 0;
+  padding: 0;
+  max-width: 30em;
+  color: var(--sw-color-text-muted, #8F8F8F);
+  font-size: var(--sw-fs-2, 28px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-2, 1.29);
+}
+
+/* ─── распорка ─── */
+/* Правило 3 из design_system 2.9: высота колонки задана соседом (карточкой),
+   а не собственным контентом, поэтому разницу разносит пустая флекс-распорка
+   с flex-basis: 0, сжимаемая до нуля, а не фиксированный margin.
+   Растягивающийся зазор в колонке ровно один — этот. */
+.sw-form__spacer {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* ─── полоса стадий ─── */
+/* Замена трёх блоков референса (решение пользователя): подготовка, процесс,
+   результат. Соотношение сторон 1/1 — в таблице design_system 10 такого типа
+   изображения нет, новая строка уходит долгом.
+   list-style снимается явно: сброса стилей в проекте нет. */
+/* ШИРИНА ПОЛОСЫ ОГРАНИЧЕНА, И ЭТО ЗАМЕР, А НЕ ВКУС. На кадре 1440 полоса
+   занимает 533px при колонке 639 — 83%, фото по 168px. Растянутая на всю
+   колонку полоса даёт фото по 200px и упирается в карточку формы, съедая
+   зазор между зонами. 37vw воспроизводит долю кадра: 533/1440 = 37,0vw,
+   и на 2560 та же доля колонки сохраняется. */
+.sw-form__proof {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(8px, 0.96vw, 24px);
+  max-width: 37vw;
+  margin: clamp(24px, 2.5vw, 64px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sw-form__proof-item {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.5vw, 14px);
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.sw-form__proof-caption {
+  color: var(--sw-color-text-muted, #8F8F8F);
+  font-size: max(12px, var(--sw-fs-1, 24px));
+  font-weight: 200;                       /* литерал: в шкале --sw-fw-* минимум 300 */
+  line-height: var(--sw-lh-1, 1.30);
+}
+
+/* aspect-ratio + width, а не width/height в атрибутах: рамка держит раскладку
+   до загрузки и не даёт CLS (design_system 10).
+   flex: 0 0 auto — не украшение. Подписи разной длины на узких ширинах
+   переносятся на разное число строк («( подготовка )» на 320 занимает две,
+   «( процесс )» одну), и без запрета на сжатие фото в этой колонке теряло бы
+   высоту вслед за подписью: квадрат ломался, ряд переставал быть ровным. */
+.sw-form__proof-photo {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--sw-radius-md, 16px);
+}
+
+/* ─── карточка формы ─── */
+/* Заливка --sw-color-bg-page: карточка отделяется от панели сменой фона,
+   а не рамкой и не тенью (design_system 2.1). Радиус тот же, что у панели,
+   и объявляется теми же тремя ступенями. */
+.sw-form__card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: clamp(16px, 1.55vw, 40px);
+  background: var(--sw-color-bg-page, #F4F5F5);
+  border-radius: var(--sw-radius-lg, 46px);
+}
+
+.sw-form__form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: clamp(12px, 1.45vw, 37px);
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── поле ─── */
+.sw-form__field {
+  position: relative;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+/* Высота и состояния — design_system 6.3, с двумя отклонениями по решению
+   пользователя.
+   ВЫСОТА ПОДНЯТА до clamp(56px, 4.7vw, 120px): при прежней шкале введённое
+   значение вставало у нижнего края поля, потому что сверху его поджимала
+   уехавшая метка. Верхний предел 120px задан пользователем. Вместе с высотой
+   верхний padding опущен с 42% до 36% — на этой паре текст ввода приходит
+   в геометрический центр поля: на 2560 центр строки 60px при высоте 120px,
+   на 1440 — 36px при высоте 68px.
+   СОБСТВЕННОЙ ГРАНИЦЫ У ПОЛЯ НЕТ. Вместо неё прозрачная рамка той же толщины:
+   убрать border совсем нельзя — в фокусе и в состоянии ошибки он появляется,
+   и поле дёрнулось бы, сдвинув всю стопку. Прозрачная рамка держит место,
+   поэтому её толщина равна толщине проявленной и берётся из той же переменной.
+   ЦВЕТ ЗНАЧЕНИЯ #545454 — литерал, решение пользователя. В палитре его нет:
+   там основной текст --sw-color-text #242424, приглушённый #8F8F8F. */
+.sw-form__input,
+.sw-form__select {
+  display: block;
+  width: 100%;
+  height: var(--sw-form-field-h, 68px);
+  margin: 0;
+  padding: calc(var(--sw-form-field-h, 68px) * 0.36) clamp(16px, 1.64vw, 42px) 0;
+  background: var(--sw-color-bg-section, #FFFFFF);
+  border: var(--sw-form-border, 2px) solid transparent;
+  border-radius: var(--sw-radius-md, 16px);
+  color: #545454;                         /* литерал, решение пользователя */
+  font-family: inherit;
+  font-size: var(--sw-fs-2, 28px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: 1.2;
+  transition: border-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* СТРЕЛКА СЕЛЕКТА — СВОЯ ИКОНКА, appearance СНЯТ. Нативную стрелку браузер
+   рисует вплотную к правому краю, и отодвинуть её нельзя ничем: она не элемент
+   и стилям не подчиняется. Поэтому appearance: none и файл от пользователя
+   фоном — иконка получена, не нарисована нами (design_system 9).
+   Отступ стрелки от края равен левому padding поля: правая и левая границы
+   содержимого симметричны. padding-right держит текст на дистанции от стрелки —
+   это отступ плюс ширина глифа плюс зазор, иначе длинное значение уедет под неё.
+   background-size задан явно: у файла свои пропорции, и без ограничения фон
+   растянулся бы по высоте поля. */
+.sw-form__select {
+  padding-right: calc(clamp(16px, 1.64vw, 42px) + clamp(18px, 1.425vw, 36px) + 12px);
+  background-image: url("https://static.tildacdn.com/tild3530-6530-4465-a333-373633376136/Arrow_545454.svg");
+  background-repeat: no-repeat;
+  background-position: right clamp(16px, 1.64vw, 42px) center;
+  background-size: clamp(18px, 1.425vw, 36px) auto;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+/* Плейсхолдер прячется до фокуса: в покое место внутри поля занимает метка,
+   после её отъезда наверх плейсхолдер работает подсказкой формата. */
+.sw-form__input::placeholder {
+  color: transparent;
+  opacity: 1;
+}
+
+.sw-form__input:focus::placeholder {
+  color: var(--sw-color-text-muted, #8F8F8F);
+}
+
+/* hover границу больше не подсвечивает — её у поля нет. Отклик на наведение
+   несёт курсор и фокус; заводить ради hover цветную рамку значило бы вернуть
+   ту самую границу, которую решено убрать.
+   ФОКУС — ОДНА РАМКА #8F8F8F, БЕЗ ТЕНИ. Прежде поверх рамки лежала
+   box-shadow: 0 0 0 3px rgba(36,36,36,0.12) — второй кольцевой контур, который
+   читался как вторая обводка над основной. Она же вылезала и в состоянии
+   ошибки: валидация уводит фокус на первое невалидное поле, и красная рамка
+   получала тот же серый ореол. Снята.
+   Цена названа прямо: рамка #8F8F8F на белом поле даёт контраст 3,0:1 — ровно
+   нижнюю границу WCAG для нетекстовых элементов, и теперь это единственный
+   признак фокуса, без запаса.
+   outline снимается только потому, что ему есть видимая замена (6.3). */
+.sw-form__input:focus,
+.sw-form__select:focus {
+  outline: none;
+  border-color: var(--sw-color-text-muted, #8F8F8F);
+}
+
+/* ─── метка поля ─── */
+/* Требование design_system 6.3 «метка видимая, не только плейсхолдер»
+   выполняется плавающей меткой: в покое она лежит внутри поля и выглядит
+   плейсхолдером, при фокусе и при заполнении уезжает вверх и остаётся видимой.
+   Метка стоит в разметке ПОСЛЕ контрола — иначе сиблинг-селектор
+   :not(:placeholder-shown) ~ .sw-form__label не сработает.
+   Анимируется только transform (раздел 8): сдвиг задан в процентах от высоты
+   ПОЛЯ, а не в px, поэтому одинаково работает на всей шкале высот 48…90px.
+   КЕГЛЬ УЕХАВШЕЙ МЕТКИ ПЕРЕКЛЮЧАЕТСЯ СТУПЕНЬЮ, А НЕ scale(). Через scale
+   величина считается от кегля поля и на компактных ширинах падала до 8,8px —
+   ниже порога читаемости 12px (design_system 2.2). Ступень --sw-fs-1 с полом
+   max(12px, …) держит метку читаемой на всех шести ширинах. Цена — смена кегля
+   идёт скачком, без перехода: правило «анимируем только transform и opacity»
+   на font-size не распространяется, и обходить его подгонкой не нужно.
+   Коэффициент 0.85 — локальное вычисление внутри секции, не новый токен:
+   без него уехавшая метка на 1440 и выше подходит вплотную к тексту ввода.
+   У селекта :placeholder-shown неприменим, состояние ставит поведение секции
+   классом sw-form__field--filled. */
+.sw-form__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding-inline: clamp(16px, 1.64vw, 42px);
+  color: var(--sw-color-text-muted, #8F8F8F);
+  font-size: var(--sw-fs-2, 28px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: 1.2;
+  pointer-events: none;
+  transform-origin: left center;
+  transition: transform var(--sw-dur-base, 250ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-form__input:focus ~ .sw-form__label,
+.sw-form__input:not(:placeholder-shown) ~ .sw-form__label,
+.sw-form__select:focus ~ .sw-form__label,
+.sw-form__field--filled .sw-form__label {
+  font-size: max(12px, calc(var(--sw-fs-1, 24px) * 0.7));
+  transform: translateY(-29%);
+}
+
+/* ─── состояние ошибки поля ─── */
+/* Красный — литерал #C62F2F, статус-цветов в системе нет (design_system 11).
+   Обводка снимается при первом же вводе: поведение секции. */
+.sw-form__field--error .sw-form__input,
+.sw-form__field--error .sw-form__select {
+  border-color: #C62F2F;
+}
+
+/* ─── чекбоксы ─── */
+/* Тач-область расширена самой меткой до ≥44px (design_system 6.4), сам бокс
+   при этом на 320–768 остаётся 20px: кламп зажат минимумом.
+   :active объявляется без условия (hover: hover) — на тач-устройстве это
+   единственный отклик на нажатие (раздел 8). */
+.sw-form__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(10px, 0.7vw, 18px);
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sw-form__checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  width: clamp(20px, 1.57vw, 40px);
+  height: clamp(20px, 1.57vw, 40px);
+  margin: 0;
+  padding: 0;
+  background: var(--sw-color-bg-section, #FFFFFF) no-repeat center center;
+  background-size: 62% auto;
+  border: var(--sw-form-cb-border, 3px) solid #787878;   /* литерал, решение пользователя */
+  border-radius: 0;                       /* скругления нет — решение пользователя */
+  cursor: pointer;
+  transition: border-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-form__checkbox:hover {
+  border-color: var(--sw-color-text, #242424);
+}
+
+.sw-form__checkbox:focus-visible {
+  outline: 2px solid var(--sw-color-focus, #242424);
+  outline-offset: 2px;
+}
+
+/* Заливки нет — меняются цвет обводки и появление галочки. Расхождение с 6.4
+   зафиксировано в шапке файла секции. Файл иконки получен от пользователя. */
+.sw-form__checkbox:checked {
+  border-color: var(--sw-color-text, #242424);
+  background-image: url("https://static.tildacdn.com/tild6332-3961-4964-b333-636563663334/Check_242424.svg");
+}
+
+/* Красная обводка тоньше обычной — 2px против 3px, решение пользователя.
+   Размер бокса при этом не меняется: box-sizing: border-box объявлен первой
+   строкой секции, и рамка растёт внутрь. */
+.sw-form__consent--error .sw-form__checkbox {
+  border-width: var(--sw-form-cb-border-error, 2px);
+  border-color: #C62F2F;
+}
+
+/* Цвет приглушённый, как у меток полей — решение пользователя.
+   Известная цена: #8F8F8F на подложке карточки #F4F5F5 даёт контраст ≈2,9:1,
+   а WCAG AA требует 4,5:1 для текста этого кегля. Ссылка на политику из этого
+   правила выведена и остаётся тёмной: она несёт юридический смысл, и терять
+   её читаемость нельзя. */
+.sw-form__consent-text {
+  color: var(--sw-color-text-muted, #8F8F8F);
+  font-size: max(12px, var(--sw-fs-1, 24px));
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-1, 1.30);
+}
+
+/* Текстовая ссылка в контенте по design_system 6.5: на hover меняется цвет
+   подчёркивания, цвет текста остаётся. Правило шапки и футера (смена цвета
+   текста на --sw-color-link-hover) сюда не распространяется. */
+.sw-form__policy-link {
+  color: var(--sw-color-text, #242424);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(36, 36, 36, 0.35);
+  transition: text-decoration-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-form__policy-link:hover {
+  text-decoration-color: var(--sw-color-text, #242424);
+}
+
+.sw-form__policy-link:focus-visible {
+  outline: 2px solid var(--sw-color-focus, #242424);
+  outline-offset: 2px;
+}
+
+/* ─── кнопка отправки ─── */
+/* Первичная кнопка страницы, design_system 6.1, с одним отступлением:
+   радиус --sw-radius-md вместо --sw-radius-pill. На кадрах кнопка —
+   скруглённый прямоугольник, а не пилюля; рядом с крупным скруглением панели
+   пилюля читается как чужой элемент. Прецедент — кнопка-якорь Hero (6.7).
+   Нового литерала при этом не заводится: берётся существующий токен.
+   margin-top: auto — кнопка прижата к низу карточки, если та окажется выше
+   собственного содержимого.
+   ВЫСОТУ ЗАДАЁТ padding, А НЕ height — так сделано на референсе, и так кнопка
+   остаётся выше поля ввода на всей шкале: её высота считается от кегля метки
+   плюс отбивка, а не назначается числом. Прежний height давал на 1440 ровно
+   ту же высоту, что у поля, и кнопка переставала читаться главным элементом
+   карточки. min-height держит тач-минимум там, где padding сжимается. */
+.sw-form__submit {
+  width: 100%;
+  min-height: 48px;
+  margin: auto 0 0;
+  padding: clamp(20px, 1.91vw, 49px) clamp(16px, 1.2vw, 32px);
+  background: var(--sw-color-cta, #242424);
+  border: 0;
+  border-radius: var(--sw-radius-md, 16px);
+  color: var(--sw-color-text-on-cta, #FFFFFF);
+  font-family: inherit;
+  font-size: var(--sw-fs-2, 28px);
+  font-weight: var(--sw-fw-medium, 500);
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-form__submit:hover {
+  background: var(--sw-color-cta-hover, #0D0D0D);
+}
+
+.sw-form__submit:focus-visible {
+  outline: 2px solid var(--sw-color-focus, #242424);
+  outline-offset: 3px;
+}
+
+.sw-form__submit:active {
+  background: var(--sw-color-cta-hover, #0D0D0D);
+  transform: translateY(1px);
+}
+
+.sw-form__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ─── модальное окно успеха ─── */
+/* НЕ SEC-15. Modal_window_form (SEC-15) — обратный звонок, префикс sw-modal,
+   нативный попап Тильды. Это окно живёт внутри SEC-9, берёт классы
+   sw-form__success-* и чужого префикса не занимает.
+   position: fixed внутри блока T123 работает, ПОКА НИ ОДИН ПРЕДОК НЕ ИМЕЕТ
+   transform. Практическое следствие для переноса: у блока с этой секцией
+   нельзя включать анимацию появления в настройках Тильды — она вешает трансформ
+   на обёртку и превращает fixed в absolute. Записано в T218 над блоком.
+   Слой --sw-z-overlay (900) — тот же, что у Mobile_menu.
+   [hidden] объявляется явно: display: flex ниже перебил бы атрибут. */
+.sw-form__success[hidden] {
+  display: none;
+}
+
+/* ПОДЛОЖКА ЗАКРЫВАЕТ ВЬЮПОРТ ЦЕЛИКОМ, а отступ до панели даёт padding, а не
+   inset. Через inset модалка вставала бы с зазором от краёв, и в этот зазор
+   была видна панель GlobalHeader: она фиксированная и остаётся на экране
+   (проверено в цехе — elementFromPoint в зазоре отдавал логотип шапки).
+   Слой тот же, что у Mobile_menu, и перекрытие шапки здесь такое же штатное.
+   Фон подложки — цвет страницы: под модалкой не должно просвечивать ничего. */
+.sw-form__success {
+  position: fixed;
+  inset: 0;
+  z-index: var(--sw-z-overlay, 900);
+  display: flex;
+  padding: clamp(15px, 1.396vw + 4.26px, 40px);
+  background: var(--sw-color-bg-page, #F4F5F5);
+  opacity: 0;
+  transition: opacity var(--sw-dur-slow, 400ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.sw-form__success--open {
+  opacity: 1;
+}
+
+.sw-form__success-panel {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  padding: clamp(30px, 3.9vw, 100px);
+  background: var(--sw-color-bg-section, #FFFFFF);
+  border: 1px solid var(--sw-color-bg-page, #F4F5F5);
+  border-radius: var(--sw-radius-lg, 46px);
+  transform: translateY(16px);
+  transition: transform var(--sw-dur-slow, 400ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.sw-form__success--open .sw-form__success-panel {
+  transform: translateY(0);
+}
+
+/* Логотип фоном: прозрачность 8% (решение пользователя), прижат к правому краю
+   и обрезан нижним. Декоративен — aria-hidden в разметке, кликов не
+   перехватывает.
+   ФОНОМ ИДЁТ ТОЛЬКО ЗНАК, И ЭТО КАДРИРОВАНИЕ, А НЕ ОТДЕЛЬНЫЙ ФАЙЛ. Логотип
+   в проекте один, знак и вордмарк в нём одним SVG 300×146 (design_system 9),
+   отдельного файла знака нет, а рисовать его нам нельзя. Окно с соотношением
+   0.84/1 плюс object-fit: cover и object-position: left отсекают вордмарк
+   по границе знака: cover тянет файл по высоте окна, ширина файла становится
+   2.05 его высоты, и в окно попадает 0.84 / 2.05 ≈ 41% — знак занимает левые
+   44%, вордмарк начинается за 46%. Величина подобрана под текущий файл:
+   заменят логотип с другой раскладкой — окно поедет, и это видно глазом. */
+.sw-form__success-logo {
+  position: absolute;
+  right: -2%;
+  bottom: -16%;
+  width: 46%;
+  height: auto;
+  aspect-ratio: 0.78 / 1;
+  object-fit: cover;
+  object-position: left center;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.sw-form__success-title {
+  position: relative;
+  max-width: 12em;
+  margin: 0;
+  padding: 0;
+  color: var(--sw-color-text, #242424);
+  font-size: var(--sw-fs-6, 86px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-6, 1.08);
+}
+
+.sw-form__success-back {
+  position: relative;
+  align-self: flex-start;
+  height: clamp(48px, 5.1vw, 130px);
+  margin: clamp(24px, 2.4vw, 62px) 0 0;
+  padding: 0 clamp(24px, 2.2vw, 56px);
+  background: var(--sw-color-cta, #242424);
+  border: 0;
+  border-radius: var(--sw-radius-md, 16px);
+  color: var(--sw-color-text-on-cta, #FFFFFF);
+  font-family: inherit;
+  font-size: var(--sw-fs-2, 28px);
+  font-weight: var(--sw-fw-medium, 500);
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-form__success-back:hover {
+  background: var(--sw-color-cta-hover, #0D0D0D);
+}
+
+.sw-form__success-back:focus-visible {
+  outline: 2px solid var(--sw-color-focus, #242424);
+  outline-offset: 3px;
+}
+
+.sw-form__success-back:active {
+  background: var(--sw-color-cta-hover, #0D0D0D);
+  transform: translateY(1px);
+}
+
+/* ─── плашка отказа ─── */
+/* Два текста на одном узле: отказ платформы и незаполненные обязательные поля.
+   Автозакрытия по таймеру нет — сообщение об ошибке не должно исчезать само.
+   ≥769 правый нижний угол, ≤768 сверху под панелью GlobalHeader: на ≤768
+   панель не уезжает при скролле (SEC-2), поэтому 80px — детерминированная
+   величина, а не догадка (72px высоты панели + 8px её нижнего зазора,
+   design_system 7). */
+.sw-form__notice[hidden] {
+  display: none;
+}
+
+.sw-form__notice {
+  position: fixed;
+  right: clamp(15px, 1.396vw + 4.26px, 40px);
+  bottom: clamp(15px, 1.396vw + 4.26px, 40px);
+  z-index: var(--sw-z-overlay, 900);
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(12px, 1vw, 24px);
+  max-width: 26em;
+  padding: clamp(14px, 1.1vw, 28px) clamp(16px, 1.3vw, 32px);
+  background: #C62F2F;                    /* литерал, статус-цветов в системе нет */
+  border-radius: var(--sw-radius-md, 16px);
+  box-shadow: var(--sw-shadow-lg, 0 12px 32px rgba(0,0,0,0.10));
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity var(--sw-dur-base, 250ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+              transform var(--sw-dur-base, 250ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.sw-form__notice--open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sw-form__notice-text {
+  margin: 0;
+  padding: 0;
+  color: var(--sw-color-text-on-cta, #FFFFFF);
+  font-size: max(12px, var(--sw-fs-1, 24px));
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-1, 1.30);
+}
+
+/* Тач-минимум 44px даёт padding, а не размер глифа (design_system 9).
+   Иконка одна, второго состояния у неё нет — подмены файла на hover нет. */
+.sw-form__notice-close {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -12px -14px -12px 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-form__notice-close:hover {
+  opacity: 1;
+}
+
+.sw-form__notice-close:focus-visible {
+  outline: 2px solid var(--sw-color-focus-on-dark, #FFFFFF);
+  outline-offset: 2px;
+}
+
+.sw-form__notice-icon {
+  display: block;
+  width: clamp(14px, 0.9vw, 22px);
+  height: auto;
+}
+
+/* ═══ КОМПАКТНОЕ СОСТОЯНИЕ — единственное перестроение композиции ═══ */
+@media (max-width: 768px) {
+
+  .sw-form {
+    --sw-form-field-h: clamp(52px, 7.3vw, 60px);
+    scroll-margin-top: 80px;
+    margin-bottom: 8px;
+  }
+
+  .sw-form__container {
+    padding-inline: 15px;
+  }
+
+  /* Одна колонка. Левая колонка перестаёт быть колонкой: её содержимое
+     распределяется по строкам панели, поэтому display: contents — узел
+     сохраняется в разметке, но собственной коробки не создаёт, и полоса стадий
+     оказывается прямой строкой панели между подзаголовком и карточкой.
+     Вместе с коробкой снимается и container-type: опорной коробки для cqi
+     здесь нет, и кегль H2 берёт ступень целиком (см. ниже). */
+  .sw-form__panel {
+    grid-template-columns: 1fr;
+    row-gap: 0;
+    padding: clamp(20px, 3.9vw, 30px) clamp(15px, 5.2vw, 40px);
+  }
+
+  .sw-form__intro {
+    display: contents;
+  }
+
+  /* Текст центрируется — композиция кадра 768. Кегль не переопределяется:
+     ступень одна по обе стороны границы, см. комментарий у базового правила. */
+  .sw-form__title {
+    max-width: none;
+    text-align: center;
+  }
+
+  .sw-form__subtitle {
+    max-width: none;
+    margin-top: clamp(8px, 1.6vw, 12px);
+    text-align: center;
+  }
+
+  /* Распорки в компактном состоянии нет: высота панели задана контентом,
+     разносить нечего. */
+  .sw-form__spacer {
+    display: none;
+  }
+
+  /* Подпись уходит ПОД фото — порядок двух узлов, не смена родителя.
+     Полоса уже, чем панель, и отцентрована — композиция кадра 768: там она
+     занимает 463px при ширине кадра 765, то есть 60,3vw.
+     ПОЛ 280px И ПОТОЛОК 100% — оба обязательны, и оба замер, а не вкус.
+     Доля 60vw верна только у самой границы: на кадрах 425 и 320 полоса
+     занимает уже 79% и 82% ширины панели, а не 60% экрана. Продлённая вниз
+     доля даёт на 320 фото по 60px, и подпись «( подготовка )» ломается на три
+     строки — проверено в цехе. 280px — ширина, на которой три подписи встают
+     каждая в одну строку. Потолок 100% страхует от переполнения: на 320
+     внутренняя ширина панели равна 287px, и пол подходит к ней вплотную. */
+  .sw-form__proof {
+    gap: clamp(6px, 1.6vw, 12px);
+    max-width: min(100%, max(60vw, 280px));
+    margin-top: clamp(16px, 3.2vw, 26px);
+    margin-bottom: clamp(16px, 3.2vw, 26px);
+    margin-inline: auto;
+  }
+
+  .sw-form__proof-item {
+    flex-direction: column-reverse;
+  }
+
+  .sw-form__card {
+    padding: clamp(12px, 2.6vw, 20px);
+  }
+
+  .sw-form__form {
+    gap: clamp(8px, 2.3vw, 18px);
+  }
+
+  .sw-form__input,
+  .sw-form__select {
+    padding-inline: 16px;
+    font-size: max(16px, var(--sw-fs-2, 28px));
+  }
+
+  /* padding-inline выше перебивает правый отступ селекта, и без восстановления
+     длинное значение заезжает под стрелку: правило шире по охвату и стоит ниже
+     по файлу. Отступ стрелки и место под неё пересчитаны от компактных 16px. */
+  .sw-form__select {
+    padding-right: calc(16px + clamp(18px, 1.425vw, 36px) + 12px);
+    background-position: right 16px center;
+  }
+
+  .sw-form__label {
+    padding-inline: 16px;
+    font-size: max(16px, var(--sw-fs-2, 28px));
+  }
+
+  /* Своя отбивка: продлённый вниз десктопный коэффициент на 768 давал кнопку
+     ниже поля ввода, а на 320 — ниже тач-минимума. */
+  .sw-form__submit {
+    padding-block: clamp(17px, 2.98vw, 23px);
+  }
+
+  /* Плашка отказа переезжает под панель GlobalHeader и растягивается
+     по ширине за вычетом бокового отступа страницы. */
+  .sw-form__notice {
+    top: 80px;
+    right: 15px;
+    bottom: auto;
+    left: 15px;
+    max-width: none;
+  }
+
+  .sw-form__success {
+    padding: 15px;
+  }
+
+  .sw-form__success-panel {
+    justify-content: flex-start;
+    padding: clamp(20px, 3.9vw, 30px);
+    text-align: center;
+  }
+
+  /* Логотип уходит за текст по центру. Кадрирование то же, меняются только
+     размер и позиция. */
+  .sw-form__success-logo {
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    width: 78%;
+    transform: translate(-50%, -50%);
+  }
+
+  .sw-form__success-title {
+    max-width: none;
+    margin-top: clamp(24px, 6vw, 48px);
+  }
+
+  /* Кнопка прижата к низу панели и растянута по ширине — композиция кадра 768. */
+  .sw-form__success-back {
+    align-self: stretch;
+    height: clamp(48px, 7.8vw, 60px);
+    margin-top: auto;
+    padding-inline: 16px;
+  }
+}
+
+/* ═══ СТУПЕНИ --sw-radius-lg ═══ */
+/* Фолбэк ступенями не выражается — объявляется трижды, повторяя форму
+   объявления токена в ЗОНЕ A (design_system 2.4). Именно max-width, а не
+   зеркальные min-width: на дробных ширинах от масштабирования страницы
+   ≤1024 и ≥1025 оба ложны, и фолбэк разошёлся бы с токеном.
+   Композицию эти границы не трогают. */
+@media (max-width: 1024px) {
+  .sw-form__panel,
+  .sw-form__card,
+  .sw-form__success-panel {
+    border-radius: var(--sw-radius-lg, 26px);
+  }
+}
+
+@media (max-width: 375px) {
+  .sw-form__panel,
+  .sw-form__card,
+  .sw-form__success-panel {
+    border-radius: var(--sw-radius-lg, 14px);
+  }
+}
+
+/* ═══ prefers-reduced-motion ═══ */
+/* Переходы и трансформы сводятся к нулю, содержимое читаемо сразу
+   (design_system 8). Плавающая метка при этом обязана остаться в верхнем
+   положении — иначе она наложится на введённый текст: снимается длительность,
+   а не сам transform. */
+@media (prefers-reduced-motion: reduce) {
+  .sw-form__label,
+  .sw-form__input,
+  .sw-form__select,
+  .sw-form__checkbox,
+  .sw-form__submit,
+  .sw-form__policy-link,
+  .sw-form__success,
+  .sw-form__success-panel,
+  .sw-form__success-back,
+  .sw-form__notice,
+  .sw-form__notice-close {
+    transition-duration: 0.01ms;
+  }
+
+  .sw-form__success-panel,
+  .sw-form__notice {
+    transform: none;
+  }
+}
+
+/* ═══ ТОЛЩИНА ОБВОДОК НИЖЕ 1440px ═══ */
+/* Все обводки секции тоньше на 1px: поле 2 → 1, чекбокс 3 → 2, красная обводка
+   чекбокса 2 → 1. На средних экранах прежняя толщина читается жирной
+   (решение пользователя).
+   Граница новая для проекта, в реестре design_system 2.7 её нет — подробности
+   и долг названы у объявления переменных в начале файла секции.
+   Записана как max-width: 1439px, а не min-width: 1440px, по той же причине,
+   что и ступени радиуса: обе стороны обязаны быть max-width, иначе на дробных
+   ширинах от масштабирования страницы не сработает ни одна.
+   Переменные объявляются на контейнере секции — за её пределы не выходят. */
+@media (max-width: 1439px) {
+  .sw-form {
+    --sw-form-border: 1px;
+    --sw-form-cb-border: 2px;
+    --sw-form-cb-border-error: 1px;
+  }
 }
 </style>
 <!-- разметка — секция Форма заявки -->
-<section class="sw-form" id="sw-form" data-sw-scaffold>
-  <div class="sw-form__container"></div>
+<section class="sw-form" id="sw-form">
+  <div class="sw-form__container">
+    <div class="sw-form__panel">
+
+      <div class="sw-form__intro">
+        <h2 class="sw-form__title">Воплотим вашу идею<br>в красивую реальность</h2>
+        <!-- Перелом смещён вправо: верхняя строка длиннее нижней (решение
+             пользователя). Прежний перенос делил текст пополам — 37 и 39
+             знаков, — и обе строки выглядели одинаковыми по длине. -->
+        <p class="sw-form__subtitle">Заполните форму — мы с вами свяжемся в течение<br>рабочего дня и обсудим детали</p>
+
+        <div class="sw-form__spacer" aria-hidden="true"></div>
+
+        <ul class="sw-form__proof">
+          <li class="sw-form__proof-item">
+            <span class="sw-form__proof-caption">( подготовка )</span>
+            <img class="sw-form__proof-photo"
+                 src="https://static.tildacdn.com/tild6435-3162-4064-b666-623836373436/preparation.webp"
+                 alt="Подготовка основания под каменный ковёр"
+                 loading="lazy">
+          </li>
+          <li class="sw-form__proof-item">
+            <span class="sw-form__proof-caption">( процесс )</span>
+            <img class="sw-form__proof-photo"
+                 src="https://static.tildacdn.com/tild3033-3730-4036-a234-323764366366/process.webp"
+                 alt="Укладка каменного ковра на объекте"
+                 loading="lazy">
+          </li>
+          <li class="sw-form__proof-item">
+            <span class="sw-form__proof-caption">( результат )</span>
+            <img class="sw-form__proof-photo"
+                 src="https://static.tildacdn.com/tild6265-3631-4262-b534-656133656131/result.webp"
+                 alt="Готовое покрытие из каменного ковра"
+                 loading="lazy">
+          </li>
+        </ul>
+      </div>
+
+      <div class="sw-form__card">
+        <!-- novalidate: нативный пузырь браузера подавлен, сценарий отказа свой —
+             плашка плюс красная обводка непрошедших полей. Атрибутов action
+             и method нет: отправку целиком ведёт поведение секции, страница
+             никуда не уходит. -->
+        <form class="sw-form__form" novalidate>
+
+          <div class="sw-form__field">
+            <select class="sw-form__select" id="sw-form-coverage" name="coverage_area">
+              <option value=""></option>
+              <option value="Терраса">Терраса</option>
+              <option value="Бассейн">Бассейн</option>
+              <option value="Дорожки">Дорожки</option>
+              <option value="Парковка">Парковка</option>
+              <option value="Крыльцо">Крыльцо</option>
+            </select>
+            <label class="sw-form__label" for="sw-form-coverage">Зона покрытия</label>
+          </div>
+
+          <!-- КОНТРАКТ 1 (PRD 10). Значения опций совпадают с data-sw-material
+               карточек каталога ПОСИМВОЛЬНО. Источник — собранный каталог
+               (SEC-5), а не имена файлов в /Materials/Catalog: они уже разошлись
+               («Мраморное море(серебро)» против файла «Мраморное море (серый)»).
+               Расхождение здесь тихое: подстановка просто не сработает. -->
+          <div class="sw-form__field">
+            <select class="sw-form__select" id="sw-form-material" name="material">
+              <option value=""></option>
+              <option value="Берег крыма">Берег крыма</option>
+              <option value="Дагестан">Дагестан</option>
+              <option value="Жемчуг крыма">Жемчуг крыма</option>
+              <option value="Каспий">Каспий</option>
+              <option value="Красное море">Красное море</option>
+              <option value="Мрамор белый">Мрамор белый</option>
+              <option value="Мрамор микс(светлый)">Мрамор микс(светлый)</option>
+              <option value="Мрамор микс 1(тёмный)">Мрамор микс 1(тёмный)</option>
+              <option value="Мрамор микс 3">Мрамор микс 3</option>
+              <option value="Мрамор розовый">Мрамор розовый</option>
+              <option value="Мрамор серый">Мрамор серый</option>
+              <option value="Мраморное море(бронза)">Мраморное море(бронза)</option>
+              <option value="Мраморное море(золото)">Мраморное море(золото)</option>
+              <option value="Мраморное море(серебро)">Мраморное море(серебро)</option>
+              <option value="Ореховая роща">Ореховая роща</option>
+              <option value="Северное море">Северное море</option>
+              <option value="Скала">Скала</option>
+              <option value="Чёрное море">Чёрное море</option>
+              <option value="Чёрный мрамор">Чёрный мрамор</option>
+              <option value="Южный берег">Южный берег</option>
+            </select>
+            <label class="sw-form__label" for="sw-form-material">Материал</label>
+          </div>
+
+          <div class="sw-form__field">
+            <input class="sw-form__input" id="sw-form-quantity" name="quantity"
+                   type="text" inputmode="numeric" autocomplete="off" placeholder="например, 45">
+            <label class="sw-form__label" for="sw-form-quantity">Площадь покрытия, м²</label>
+          </div>
+
+          <div class="sw-form__field">
+            <input class="sw-form__input" id="sw-form-name" name="name"
+                   type="text" autocomplete="name" required placeholder="Иван Иванов">
+            <label class="sw-form__label" for="sw-form-name">Имя</label>
+          </div>
+
+          <div class="sw-form__field">
+            <input class="sw-form__input" id="sw-form-phone" name="phone"
+                   type="tel" inputmode="tel" autocomplete="tel" required
+                   placeholder="+7 (999) 123-45-67">
+            <label class="sw-form__label" for="sw-form-phone">Номер телефона</label>
+          </div>
+
+          <!-- FRM-2: обязательный, не предзаполненный. -->
+          <label class="sw-form__consent">
+            <input class="sw-form__checkbox" type="checkbox" name="confidentiality" required>
+            <span class="sw-form__consent-text">Я согласен с <a class="sw-form__policy-link" href="https://thestoneworld.ru/privacy_policy">политикой конфиденциальности</a></span>
+          </label>
+
+          <!-- FRM-3: необязательный, отправку не блокирует. -->
+          <label class="sw-form__consent">
+            <input class="sw-form__checkbox" type="checkbox" name="advertisement">
+            <span class="sw-form__consent-text">Согласен получать новости и специальные предложения</span>
+          </label>
+
+          <!-- Своей цели аналитики у кнопки нет: конверсия засчитывается
+               на виртуальной странице нативного блока (PRD 11, ANL-2). -->
+          <button class="sw-form__submit" type="submit">Отправить заявку</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Модальное окно успеха. Открывается только по подтверждённому успеху
+       нативного блока. Заголовок — h3: уровень под H2 секции, не пропущен. -->
+  <div class="sw-form__success" role="dialog" aria-modal="true" aria-labelledby="sw-form-success-title" hidden>
+    <div class="sw-form__success-panel">
+      <img class="sw-form__success-logo"
+           src="https://static.tildacdn.com/tild3730-6665-4330-b664-346534636566/logo_StoneWorld.svg"
+           alt="" aria-hidden="true">
+      <h3 class="sw-form__success-title" id="sw-form-success-title">Заявка отправлена, мы с вами скоро свяжемся!</h3>
+      <button class="sw-form__success-back" type="button">Вернуться на главную</button>
+    </div>
+  </div>
+
+  <!-- Плашка отказа. Текст пишет поведение секции: отказ платформы либо
+       незаполненные обязательные поля. -->
+  <div class="sw-form__notice" role="alert" hidden>
+    <p class="sw-form__notice-text"></p>
+    <button class="sw-form__notice-close" type="button" aria-label="Закрыть сообщение">
+      <img class="sw-form__notice-icon"
+           src="https://static.tildacdn.com/tild6261-3964-4231-b832-323162363931/Close_FFFFFF.svg"
+           alt="" aria-hidden="true">
+    </button>
+  </div>
 </section>
 <!-- ═══════ T123 · СЕКЦИЯ: Форма заявки (SEC-9) — конец ═══════ -->
 
@@ -4479,6 +6492,315 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 </script>
 
 <!-- ═══════ T123 · ПОВЕДЕНИЕ: Каталог (SEC-5) ═══════ -->
+<script>
+/* поведение — секция Каталог */
+(function () {
+
+  var root = document.querySelector('.sw-catalog');
+  if (!root) return;
+
+  var reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* ── 1. Фильтр и «Показать ещё» ────────────────────────────────────────────
+     Чистый JS, от GSAP не зависит: библиотек нет — каталог всё равно работает.
+     Связь фильтр↔карточка по совпадающим значениям data-sw-filter и
+     data-sw-group; «Все» несёт служебное значение all. Смена мгновенная:
+     анимации появления карточек в секции нет (решение пользователя).
+
+     СКРЫТИЕ ЛИШНИХ КАРТОЧЕК ВКЛЮЧАЕТ ИМЕННО СКРИПТ, А НЕ CSS. В разметке
+     показаны все двадцать, кнопка «Показать ещё» несёт hidden. Порядок именно
+     такой, потому что урезание списка — это потеря контента: не отработал
+     скрипт, не догрузился блок, отключён JS — клиент обязан увидеть каталог
+     целиком, а не пять карточек без способа раскрыть остальные. Обратная схема
+     (прячем в CSS, показываем скриптом) этого не даёт.
+
+     Порог зависит от ширины: больше 10 карточек на >1024 и больше 5 на ≤1024
+     (бриф секции). Граница та же, по которой перестраивается шапка секции, —
+     нового числа поведение не заводит. Раскрытие одноразовое: клик показывает
+     весь остаток, а не следующую порцию. Для двадцати позиций порционная выдача
+     потребовала бы до трёх нажатий подряд, что на лендинге читается как помеха,
+     а не как навигация.
+     Смена фильтра сбрасывает раскрытие: новый набор снова показывается урезанным.
+     Смена ширины пересчитывает порог только у нераскрытого списка — забирать
+     обратно то, что клиент уже открыл, нельзя. */
+  var filters = root.querySelectorAll('.sw-catalog__filter');
+  var cards = root.querySelectorAll('.sw-catalog__card');
+  var more = root.querySelector('.sw-catalog__more');
+  var moreBtn = root.querySelector('.sw-catalog__cta--more');
+
+  if (cards.length) {
+    var wideMQ = window.matchMedia('(min-width: 1025px)');
+    var group = 'all';
+    var expanded = false;
+
+    var fits = function (card) {
+      return group === 'all' || card.getAttribute('data-sw-group') === group;
+    };
+
+    var apply = function () {
+      var limit = wideMQ.matches ? 10 : 5;
+      var matched = 0;
+
+      Array.prototype.forEach.call(cards, function (card) {
+        if (!fits(card)) {
+          card.setAttribute('hidden', '');
+          return;
+        }
+        matched++;
+        if (expanded || matched <= limit) card.removeAttribute('hidden');
+        else card.setAttribute('hidden', '');
+      });
+
+      if (more) {
+        if (!expanded && matched > limit) more.removeAttribute('hidden');
+        else more.setAttribute('hidden', '');
+      }
+    };
+
+    Array.prototype.forEach.call(filters, function (filter) {
+      filter.addEventListener('click', function () {
+        var value = filter.getAttribute('data-sw-filter');
+        if (!value) return;
+
+        group = value;
+        expanded = false;
+
+        Array.prototype.forEach.call(filters, function (other) {
+          other.setAttribute('aria-pressed', other === filter ? 'true' : 'false');
+        });
+
+        apply();
+      });
+    });
+
+    if (moreBtn) {
+      moreBtn.addEventListener('click', function () {
+        /* Кнопка исчезает вместе с раскрытием, и фокус с неё улетел бы в начало
+           документа. Забираем первую из ещё скрытых карточек ДО пересчёта и
+           переводим фокус на её кнопку — клавиатурный клиент остаётся ровно
+           там, где появился новый контент. */
+        var next = null;
+        for (var i = 0; i < cards.length; i++) {
+          if (cards[i].hasAttribute('hidden') && fits(cards[i])) {
+            next = cards[i];
+            break;
+          }
+        }
+
+        expanded = true;
+        apply();
+
+        if (next) {
+          var link = next.querySelector('.sw-catalog__media');
+          if (link && link.focus) link.focus();
+        }
+      });
+
+      /* На iOS Safari :active не срабатывает без слушателя касания на самом
+         элементе. Обработчик пустой: состояние рисует CSS. */
+      moreBtn.addEventListener('touchstart', function () {}, { passive: true });
+    }
+
+    apply();
+
+    if (wideMQ.addEventListener) {
+      wideMQ.addEventListener('change', function () {
+        if (!expanded) apply();
+      });
+    }
+  }
+
+  /* ── 2. Фото карточки: якорь к форме с подстановкой материала ──────────────
+     Слушатель висит на ссылке-фото, а не на метке «Выбрать»: метка — span внутри
+     этой же ссылки, кликается вся площадь фотографии.
+     Контракт 1 (PRD 10). Способ выбран без перезагрузки страницы: URL-параметр
+     form-setter-* потребовал бы полной перезагрузки, а с ней теряются и позиция
+     скролла, и выбранный фильтр.
+
+     ОТВЕТСТВЕННОСТЬ ЦЕЛИКОМ ЗДЕСЬ, У КАТАЛОГА. Форма (SEC-9) — нативный блок
+     Тильды, своего кода у неё не будет, и знать про каталог она не может.
+     Предмет контракта — посимвольное совпадение названия позиции со значением
+     опции селекта; расхождение даёт тихий отказ, и это зафиксировано в PRD 10
+     как проверяемый пункт шага 11.
+     Поиск селекта ограничен узлом формы, а не документом: чужие селекты
+     страницы Тильды трогать нельзя.
+     Формы на странице нет — обработчик выходит до preventDefault, и ссылка
+     ведёт себя как обычный якорь в пустоту. Секция цела.
+     Компенсация высоты шапки читается из собственного scroll-margin-top секции:
+     тот же приём, что у sw-portfolio, — секция не обращается ни к DOM чужого
+     блока, ни к его классам.
+     scroll-behavior задавался бы по корню документа, а это глобальное правило
+     и в перенесённом коде оно запрещено. */
+  var scrollToY = function (y) {
+    var top = y < 0 ? 0 : y;
+    try {
+      window.scrollTo({ top: top, behavior: reduceMQ.matches ? 'auto' : 'smooth' });
+    } catch (e) {
+      window.scrollTo(0, top);
+    }
+  };
+
+  var setMaterial = function (form, name) {
+    if (!name) return false;
+
+    var selects = form.querySelectorAll('select');
+
+    for (var i = 0; i < selects.length; i++) {
+      var options = selects[i].options;
+      for (var j = 0; j < options.length; j++) {
+        if (options[j].value !== name && options[j].text !== name) continue;
+
+        selects[i].selectedIndex = j;
+        /* Нативный блок слушает change, а программная установка значения его
+           не порождает. try — на случай браузера без конструктора Event. */
+        try {
+          selects[i].dispatchEvent(new Event('change', { bubbles: true }));
+        } catch (e) {}
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  var ctas = root.querySelectorAll('a.sw-catalog__media');
+
+  Array.prototype.forEach.call(ctas, function (cta) {
+
+    cta.addEventListener('click', function (event) {
+      /* ANL: имя цели не назначено */
+      var id = (cta.getAttribute('href') || '').slice(1);
+      if (!id) return;
+
+      var target = document.getElementById(id);
+      if (!target) return;
+
+      setMaterial(target, cta.getAttribute('data-sw-material') || '');
+
+      var compensation = parseFloat(window.getComputedStyle(root).scrollMarginTop) || 0;
+      var top = target.getBoundingClientRect().top
+              + (window.pageYOffset || 0)
+              - compensation;
+
+      event.preventDefault();
+      scrollToY(top);
+    });
+
+    cta.addEventListener('touchstart', function () {}, { passive: true });
+  });
+
+  /* ── 3. Скролл-заливка лида ────────────────────────────────────────────────
+     Единственная анимация секции. Механизм тот же, что у sw-about__lead и
+     sw-benefits__title: SplitText на символы, один прокси-таймлайн с onUpdate
+     переписывает --sw-catalog-fill у всех символов разом на каждом кадре,
+     пробелы занимают слот наравне с символами. Подробный разбор приёма —
+     в комментарии у sw-benefits, здесь не повторяется.
+     Библиотеки проверяются поимённо: нет любой из трёх — секция тихо ничего
+     не делает, и лид остаётся в финальном цвете, потому что правило заливки
+     висит на классе сгенерированных СИМВОЛОВ, а без сплита их не существует.
+     registerPlugin здесь не вызывается: он один раз в блоке инициализации выше.
+     Граница 769 — та же, на которой лейбл уходит под лид: ниже неё анимации
+     лида нет вовсе (бриф секции, VIS-7).
+     Блок стоит последним в файле: у него ранние выходы, и они не должны уносить
+     с собой фильтр и кнопки. */
+  var lead = root.querySelector('.sw-catalog__lead');
+  if (!lead) return;
+  if (!window.gsap || !window.ScrollTrigger || !window.SplitText) return;
+
+  var initLeadFill = function () {
+    gsap.matchMedia().add({
+      isDesktop: '(min-width: 769px)',
+      reduceMotion: '(prefers-reduced-motion: reduce)'
+    }, function (ctx) {
+      var cond = ctx.conditions;
+      if (!cond.isDesktop || cond.reduceMotion) return;
+
+      /* aria: 'none' — по умолчанию плагин вешает aria-hidden на сгенерированные
+         узлы, и текст заголовка выпал бы из дерева доступности; на h2 это
+         недопустимо (SEO-2, PRD 12.1). Тег сплит не подменяет. */
+      var split = SplitText.create(lead, {
+        type: 'lines, chars',
+        linesClass: 'sw-catalog__line',
+        charsClass: 'sw-catalog__char',
+        autoSplit: true,
+        aria: 'none',
+        onSplit: function (self) {
+          var chars = self.chars;
+          var slots = [];
+          var slot = 0;
+          var ci = 0;
+
+          self.lines.forEach(function (line) {
+            var text = line.textContent;
+            var from = 0;
+            var to = text.length;
+            while (from < to && /\s/.test(text.charAt(from))) from++;
+            while (to > from && /\s/.test(text.charAt(to - 1))) to--;
+
+            for (var i = from; i < to; i++) {
+              if (/\s/.test(text.charAt(i))) {
+                slot++;
+              } else if (ci < chars.length) {
+                slots.push({ el: chars[ci++], at: slot++ });
+              }
+            }
+          });
+
+          var total = slot;
+          var proxy = { pos: 0 };
+
+          var paint = function () {
+            for (var i = 0; i < slots.length; i++) {
+              var v = proxy.pos - slots[i].at;
+              v = v < 0 ? 0 : (v > 1 ? 1 : v);
+              slots[i].el.style.setProperty('--sw-catalog-fill', (v * 100) + '%');
+            }
+          };
+
+          paint();
+
+          /* Триггер — сам лид, не секция целиком: под ним лежат фильтры и два
+             десятка карточек, и проценты от высоты секции отработали бы задолго
+             до того, как лид попал бы во вьюпорт. Та же поправка, что у sw-about.
+             Множитель скорости 1,7 — оттуда же: заголовок дозаливается примерно
+             на 59% окна и дальше стоит залитым. */
+          var tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: lead,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: 0.5
+            }
+          });
+
+          tl.to(proxy, {
+            pos: total * 1.7,
+            ease: 'none',
+            onUpdate: paint
+          });
+
+          ScrollTrigger.refresh();
+          return tl;
+        }
+      });
+
+      return function () {
+        split.revert();
+      };
+    });
+  };
+
+  /* Сплит после готовности шрифта: строки, посчитанные до подмены фолбэка
+     на Inter, разъедутся. autoSplit чинит это на лету, но первый расчёт должен
+     быть верным сразу. */
+  if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+    document.fonts.ready.then(initLeadFill);
+  } else {
+    initLeadFill();
+  }
+
+})();
+</script>
 
 <!-- ═══════ T123 · ПОВЕДЕНИЕ: Портфолио (SEC-6) ═══════ -->
 <script>
@@ -4691,6 +7013,611 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 <!-- ═══════ T123 · ПОВЕДЕНИЕ: Видео (SEC-8) ═══════ -->
 
 <!-- ═══════ T123 · ПОВЕДЕНИЕ: Форма заявки (SEC-9) ═══════ -->
+<script>
+/* поведение — секция Форма заявки */
+(function () {
+
+  var root = document.querySelector('.sw-form');
+  if (!root) return;
+
+  var form = root.querySelector('.sw-form__form');
+  var submit = root.querySelector('.sw-form__submit');
+  if (!form || !submit) return;
+
+  var reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* ── 0. Мост в нативный блок Тильды ────────────────────────────────────────
+     ЗАЧЕМ ВООБЩЕ МОСТ. Форма собрана нашим кодом в T123, но приём заявок,
+     уведомления и интеграции остаются у Тильды (FRM-5): значения перекладываются
+     в поля её блока, и отправляет их она сама, своей формой и своим бэкендом.
+     Расхождение с FRM-4 и с design_system 6/11, где форма названа нативной
+     целиком, — решение пользователя, документы правятся отдельным проходом.
+
+     ID БЛОКА-МОСТА ЗАШИТ КОНСТАНТОЙ. Другого способа адресовать чужой блок нет:
+     rec-идентификатор выдаёт Тильда, и он не выводится ни из чего в разметке.
+     Пересоздадут блок в редакторе — id сменится, мост перестанет находиться,
+     и секция уйдёт в ветку «моста нет» (см. ниже). Тихой поломки не будет:
+     кнопка сразу окажется в disabled, это видно без консоли.
+
+     СЕМЬ ИМЁН ПЕРЕМЕННЫХ — предмет посимвольного совпадения с настройками полей
+     в Тильде, ровно как значения опций каталога в контракте 1. Разойдётся хоть
+     одно — это поле молча уедет пустым, остальная заявка дойдёт. */
+  var BRIDGE_ID = 'rec2611784501';
+
+  var BRIDGE_FIELDS = {
+    coverage_area:   'sw-form-coverage_area',
+    material:        'sw-form-material',
+    quantity:        'sw-form-quantity',
+    name:            'sw-form-name',
+    phone:           'sw-form-phone',
+    confidentiality: 'sw-form-confidentiality',
+    advertisement:   'sw-form-advertisement'
+  };
+
+  var bridge = document.getElementById(BRIDGE_ID);
+  var bridgeForm = bridge ? bridge.querySelector('form') : null;
+
+  /* СКРЫТИЕ — ИЗ JS, НЕ ИЗ CSS. Правило по #rec2611784501 в таблице стилей было
+     бы оформлением чужого DOM, а это стоп-лист CLAUDE.md 3. Тот же режим
+     исключения, что у блокировки скролла: трогаем чужой узел из скрипта.
+     Прячем клипом, а не display: none. Причина не вкусовая: поведение
+     собственной валидации Тильды на display: none не проверено, а клип
+     оставляет форму в раскладке и в потоке ровно такой, какой её ждёт скрипт
+     платформы.
+     inert убирает содержимое из таб-порядка и из дерева доступности одним
+     атрибутом. Где его нет — падаем на aria-hidden плюс tabindex: пара покрывает
+     оба канала, через которые клиент мог бы попасть в скрытую форму. */
+  if (bridge) {
+    bridge.style.position = 'absolute';
+    bridge.style.left = '0';
+    bridge.style.top = '0';
+    bridge.style.width = '1px';
+    bridge.style.height = '1px';
+    bridge.style.margin = '-1px';
+    bridge.style.padding = '0';
+    bridge.style.overflow = 'hidden';
+    bridge.style.clip = 'rect(0 0 0 0)';
+    bridge.style.clipPath = 'inset(50%)';
+    bridge.style.whiteSpace = 'nowrap';
+    bridge.style.border = '0';
+
+    if ('inert' in bridge) {
+      bridge.inert = true;
+    } else {
+      bridge.setAttribute('aria-hidden', 'true');
+      var hiddenNodes = bridge.querySelectorAll('input, select, textarea, button, a');
+      Array.prototype.forEach.call(hiddenNodes, function (node) {
+        node.setAttribute('tabindex', '-1');
+      });
+    }
+  }
+
+  /* МОСТА НА СТРАНИЦЕ НЕТ — КНОПКА ВСЁ РАВНО ОСТАЁТСЯ ЖИВОЙ. Прежде она уходила
+     в disabled прямо здесь, и это было хуже по двум причинам сразу: клиент
+     видел кнопку, которая молча не нажимается, без единого объяснения почему;
+     а ветка отказа в самом обработчике отправки становилась недостижимой —
+     мёртвый код, который никогда не отрабатывает.
+     Теперь отказ проговаривается словами: форма проверяется как обычно, и на
+     последнем шаге клиент получает плашку «Не удалось отправить». Заявка при
+     этом честно никуда не уходит, ложного успеха по-прежнему не показываем.
+     В цехе это же состояние делает секцию проверяемой целиком — валидация,
+     плашка и состояния кнопки работают без блока Тильды. */
+
+  /* ── 1. Плавающая метка селекта ────────────────────────────────────────────
+     У input состояние читает CSS через :placeholder-shown. У select такого
+     селектора нет, поэтому класс ставит поведение. Отсутствие скрипта метку
+     input не ломает — она работает на чистом CSS. */
+  var selects = form.querySelectorAll('.sw-form__select');
+
+  var syncSelect = function (select) {
+    var field = select.parentNode;
+    if (!field) return;
+    if (select.value) {
+      field.classList.add('sw-form__field--filled');
+    } else {
+      field.classList.remove('sw-form__field--filled');
+    }
+  };
+
+  Array.prototype.forEach.call(selects, function (select) {
+    syncSelect(select);
+    select.addEventListener('change', function () { syncSelect(select); });
+  });
+
+  /* ── 2. Маска телефона ─────────────────────────────────────────────────────
+     Своя, без библиотеки: узкая библиотека ради одного поля в стек не идёт.
+     Формат один, выбора страны нет (решение пользователя).
+     Пустое значение остаётся ПУСТЫМ, а не превращается в «+7»: иначе поле
+     перестанет быть :placeholder-shown, метка уедет наверх над пустым полем,
+     и плавающая метка сломается на всех ширинах сразу.
+     Каретка восстанавливается по числу цифр слева от неё, а не по индексу
+     символа: после переформатирования индексы разъезжаются, и без пересчёта
+     правка в середине номера выбрасывала бы каретку в конец. */
+  var phone = form.querySelector('#sw-form-phone');
+
+  var phoneDigits = function (value) {
+    var digits = String(value).replace(/\D/g, '');
+    if (digits.charAt(0) === '7' || digits.charAt(0) === '8') digits = digits.slice(1);
+    return digits.slice(0, 10);
+  };
+
+  var phoneFormat = function (digits) {
+    if (!digits) return '';
+    var out = '+7 (' + digits.slice(0, 3);
+    if (digits.length >= 3) out += ')';
+    if (digits.length > 3) out += ' ' + digits.slice(3, 6);
+    if (digits.length > 6) out += '-' + digits.slice(6, 8);
+    if (digits.length > 8) out += '-' + digits.slice(8, 10);
+    return out;
+  };
+
+  if (phone) {
+    phone.addEventListener('input', function () {
+      var caret = phone.selectionStart;
+      var head = phone.value.slice(0, caret === null ? phone.value.length : caret);
+      var headDigits = head.replace(/\D/g, '').length;
+      var raw = phone.value.replace(/\D/g, '');
+
+      /* Первая семёрка или восьмёрка уходит в код страны и в счёт позиции
+         каретки не идёт. */
+      if (raw.charAt(0) === '7' || raw.charAt(0) === '8') headDigits -= 1;
+      if (headDigits < 0) headDigits = 0;
+
+      var digits = phoneDigits(phone.value);
+      var next = phoneFormat(digits);
+      phone.value = next;
+
+      if (headDigits > digits.length) headDigits = digits.length;
+
+      var pos = next.length;
+      var seen = 0;
+      for (var i = 0; i < next.length; i++) {
+        if (next.charAt(i) >= '0' && next.charAt(i) <= '9') {
+          seen++;
+          if (seen === headDigits + 1) { pos = i + 1; break; }
+        }
+      }
+      if (headDigits === 0) pos = next.length ? 4 : 0;
+
+      try { phone.setSelectionRange(pos, pos); } catch (e) {}
+    });
+  }
+
+  /* ── 3. Контракт 1: Каталог → Форма (PRD 10) ───────────────────────────────
+     Приёмную сторону держит форма, а не каталог: карточки отдают только атрибут
+     data-sw-material и ничего не знают о существовании селекта. Ровно то же
+     разделение, что в контракте 2, где Mobile_menu сам находит кнопку в шапке.
+     Слушатель делегирован на документ — иначе форма зависела бы от того, собран
+     ли каталог на момент её инициализации, и от порядка блоков на странице.
+     Каталога нет — не срабатывает ничего, секция цела.
+     Значение, которого нет среди опций, не подставляется: молчаливое
+     рассогласование имён лучше видно по пустому селекту, чем по подставленному
+     мусору. Переход по якорю при этом отрабатывает штатно — его ведёт href. */
+  var material = form.querySelector('#sw-form-material');
+
+  document.addEventListener('click', function (event) {
+    if (!material) return;
+
+    var node = event.target;
+    if (!node || !node.closest) return;
+
+    var trigger = node.closest('[data-sw-material]');
+    if (!trigger) return;
+
+    var value = trigger.getAttribute('data-sw-material') || '';
+    if (!value) return;
+
+    var options = material.options;
+    for (var i = 0; i < options.length; i++) {
+      if (options[i].value === value) {
+        material.value = value;
+        syncSelect(material);
+        clearFieldError(material);
+        return;
+      }
+    }
+  });
+
+  /* ── 4. Плашка отказа ──────────────────────────────────────────────────────
+     Два текста на одном узле. Автозакрытия по таймеру нет: сообщение об ошибке
+     не должно исчезать само. */
+  var notice = root.querySelector('.sw-form__notice');
+  var noticeText = root.querySelector('.sw-form__notice-text');
+  var noticeClose = root.querySelector('.sw-form__notice-close');
+
+  var TEXT_FAILED = 'Не удалось отправить. Свяжитесь с нами или попробуйте ещё раз';
+  var TEXT_REQUIRED = 'Пожалуйста, заполните все обязательные поля';
+
+  var hideNotice = function () {
+    if (!notice) return;
+    notice.classList.remove('sw-form__notice--open');
+    notice.hidden = true;
+  };
+
+  /* hidden снимается кадром раньше класса: с display: none переход по opacity
+     не стартует вовсе, браузеру нужен кадр на пересчёт раскладки. */
+  var showNotice = function (text) {
+    if (!notice || !noticeText) return;
+    noticeText.textContent = text;
+    notice.hidden = false;
+
+    if (reduceMQ.matches) {
+      notice.classList.add('sw-form__notice--open');
+      return;
+    }
+
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(function () {
+        notice.classList.add('sw-form__notice--open');
+      });
+    });
+  };
+
+  if (noticeClose) noticeClose.addEventListener('click', hideNotice);
+
+  /* ── 5. Валидация ──────────────────────────────────────────────────────────
+     Обязательны три: имя, телефон, согласие на ПД (решение пользователя,
+     согласие — ещё и FRM-2). Остальные поля отправку не блокируют.
+     Нативный пузырь подавлен novalidate: сценарий отказа свой. */
+  var fieldOf = function (control) {
+    return control.closest ? control.closest('.sw-form__field, .sw-form__consent') : null;
+  };
+
+  function clearFieldError(control) {
+    var box = fieldOf(control);
+    if (!box) return;
+    box.classList.remove('sw-form__field--error');
+    box.classList.remove('sw-form__consent--error');
+  }
+
+  var markFieldError = function (control) {
+    var box = fieldOf(control);
+    if (!box) return;
+    if (box.classList.contains('sw-form__consent')) {
+      box.classList.add('sw-form__consent--error');
+    } else {
+      box.classList.add('sw-form__field--error');
+    }
+  };
+
+  var name = form.querySelector('#sw-form-name');
+  var consent = form.querySelector('[name="confidentiality"]');
+  var ads = form.querySelector('[name="advertisement"]');
+  var coverage = form.querySelector('#sw-form-coverage');
+  var quantity = form.querySelector('#sw-form-quantity');
+
+  var controls = form.querySelectorAll('.sw-form__input, .sw-form__select, .sw-form__checkbox');
+  Array.prototype.forEach.call(controls, function (control) {
+    control.addEventListener('input', function () { clearFieldError(control); });
+    control.addEventListener('change', function () { clearFieldError(control); });
+  });
+
+  var validate = function () {
+    var invalid = [];
+
+    if (name && !name.value.trim()) invalid.push(name);
+    if (phone && phoneDigits(phone.value).length !== 10) invalid.push(phone);
+    if (consent && !consent.checked) invalid.push(consent);
+
+    for (var i = 0; i < invalid.length; i++) markFieldError(invalid[i]);
+    return invalid;
+  };
+
+  /* ── 6. Модальное окно успеха ──────────────────────────────────────────────
+     Открывается только по подтверждённому успеху нативного блока. */
+  var success = root.querySelector('.sw-form__success');
+  var successBack = root.querySelector('.sw-form__success-back');
+
+  var scrollLock = { overflow: '', paddingRight: '', locked: false };
+
+  /* Единственное разрешённое обращение к корню документа, и только из JS
+     (CLAUDE.md 6). Прежние значения сохраняются и восстанавливаются: правила
+     по body и html в CSS перенесённого кода по-прежнему запрещены.
+     Компенсация ширины полосы прокрутки — не косметика: без неё страница под
+     модалкой дёргается вбок в момент открытия. */
+  var lockScroll = function () {
+    if (scrollLock.locked) return;
+    var doc = document.documentElement;
+    var bar = window.innerWidth - doc.clientWidth;
+
+    scrollLock.overflow = doc.style.overflow;
+    scrollLock.paddingRight = doc.style.paddingRight;
+    doc.style.overflow = 'hidden';
+    if (bar > 0) doc.style.paddingRight = bar + 'px';
+    scrollLock.locked = true;
+  };
+
+  var unlockScroll = function () {
+    if (!scrollLock.locked) return;
+    var doc = document.documentElement;
+    doc.style.overflow = scrollLock.overflow;
+    doc.style.paddingRight = scrollLock.paddingRight;
+    scrollLock.locked = false;
+  };
+
+  var scrollToTop = function () {
+    try {
+      window.scrollTo({ top: 0, behavior: reduceMQ.matches ? 'auto' : 'smooth' });
+    } catch (e) {
+      window.scrollTo(0, 0);
+    }
+  };
+
+  var focusables = function () {
+    if (!success) return [];
+    return success.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  };
+
+  /* Фокус не покидает модалку, пока она открыта: Tab по кругу, Esc закрывает.
+     Клик по фону не закрывает — сообщение об отправленной заявке снимается
+     осознанным действием. */
+  var onModalKeydown = function (event) {
+    if (event.key === 'Escape' || event.keyCode === 27) {
+      event.preventDefault();
+      closeSuccess();
+      return;
+    }
+
+    if (event.key !== 'Tab' && event.keyCode !== 9) return;
+
+    var list = focusables();
+    if (!list.length) return;
+
+    var first = list[0];
+    var last = list[list.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  var openSuccess = function () {
+    if (!success) return;
+
+    hideNotice();
+    success.hidden = false;
+    lockScroll();
+    document.addEventListener('keydown', onModalKeydown);
+
+    var run = function () {
+      success.classList.add('sw-form__success--open');
+      if (successBack) successBack.focus();
+    };
+
+    if (reduceMQ.matches) {
+      run();
+    } else {
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(run);
+      });
+    }
+  };
+
+  function closeSuccess() {
+    if (!success || success.hidden) return;
+
+    success.classList.remove('sw-form__success--open');
+    document.removeEventListener('keydown', onModalKeydown);
+    unlockScroll();
+
+    /* ПОРЯДОК ВАЖЕН, И focus ИДЁТ С preventScroll. Обычный focus() прокручивает
+       страницу к своему элементу и тем самым отменяет уход к началу: проверено
+       в цехе — после закрытия модалки страница оставалась на форме, хотя
+       scrollTo уже был вызван. Фокус возвращается на кнопку отправки, потому
+       что именно с неё клиент ушёл в модалку, а прокрутка при этом остаётся
+       за scrollToTop. */
+    var finish = function () {
+      success.hidden = true;
+      form.reset();
+      Array.prototype.forEach.call(selects, syncSelect);
+
+      try {
+        submit.focus({ preventScroll: true });
+      } catch (e) {
+        submit.focus();
+      }
+
+      scrollToTop();
+    };
+
+    if (reduceMQ.matches) {
+      finish();
+    } else {
+      window.setTimeout(finish, 400);
+    }
+  }
+
+  if (successBack) successBack.addEventListener('click', closeSuccess);
+
+  /* ── 7. Отправка через мост ────────────────────────────────────────────────
+     ЧТО ПРОИСХОДИТ ПО ШАГАМ: наша форма отменяет собственную отправку, значения
+     раскладываются по семи именам переменных блока Тильды, и submit-событие
+     отправляется НАТИВНОЙ форме. Дальше всё держит платформа — валидация,
+     запрос, уведомления, интеграции (FRM-5) и виртуальная страница для цели
+     аналитики (ANL-2).
+
+     dispatchEvent, А НЕ form.submit(). Нативный submit() обходит обработчики
+     и уводит страницу настоящим POST мимо всей логики Тильды. requestSubmit()
+     тоже не годится: он запускает нативную валидацию, а поля моста скрыты
+     и помечены inert — сфокусировать невалидное поле браузер не сможет.
+     Событие ловит обработчик Тильды, дальше её собственная валидация. */
+  var pending = false;
+  var timeoutId = 0;
+  var observer = null;
+
+  var setBridgeValue = function (varName, value, isCheckbox) {
+    if (!bridge) return;
+
+    var node = bridge.querySelector('[name="' + varName + '"]');
+    if (!node) return;
+
+    if (isCheckbox && node.type === 'checkbox') {
+      node.checked = !!value;
+    } else {
+      node.value = isCheckbox ? (value ? 'Да' : '') : value;
+    }
+
+    try {
+      node.dispatchEvent(new Event('input', { bubbles: true }));
+      node.dispatchEvent(new Event('change', { bubbles: true }));
+    } catch (e) {}
+  };
+
+  /* СБРОС СОСТОЯНИЯ МОСТА ПЕРЕД КАЖДОЙ ОТПРАВКОЙ. Без него вторая заявка
+     открывает модалку мгновенно и незаслуженно: блок Тильды после первой
+     успешной отправки оставляет свой successbox на месте, наблюдатель видит
+     его на первой же мутации и рапортует об успехе, которого ещё не было.
+     Проверено на стенде: отправка, заведомо оканчивающаяся отказом, показывала
+     модалку «Заявка отправлена». Гасим оба ящика — и успеха, и ошибки. */
+  var resetBridgeState = function () {
+    if (!bridge) return;
+    var boxes = bridge.querySelectorAll('[class*="successbox"], [class*="errorbox"]');
+    Array.prototype.forEach.call(boxes, function (box) {
+      box.style.display = 'none';
+    });
+  };
+
+  var stopWatch = function () {
+    pending = false;
+    submit.disabled = false;
+
+    if (observer) { observer.disconnect(); observer = null; }
+    if (timeoutId) { window.clearTimeout(timeoutId); timeoutId = 0; }
+  };
+
+  /* ИСХОД ЧИТАЕТСЯ ПО DOM БЛОКА ТИЛЬДЫ, И ЭТО САМОЕ ХРУПКОЕ МЕСТО СЕКЦИИ.
+     Документированного события об успешной отправке у форм Тильды нет, поэтому
+     ловится появление её собственного успеха или ошибки. Поиск по ПОДСТРОКЕ
+     класса, а не по точному имени: так переживаются оба варианта разметки
+     (t-form__successbox и js-successbox). Сменит Тильда вёрстку — модалка
+     перестанет открываться, но заявка при этом продолжит уходить.
+     Проверяется только на опубликованной странице: в редакторе и предпросмотре
+     T123 выводится текстом. */
+  var readOutcome = function () {
+    if (!pending || !bridge) return;
+
+    var visible = function (node) {
+      if (!node) return false;
+      var style = window.getComputedStyle(node);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      return node.offsetWidth > 0 || node.offsetHeight > 0 || node.getClientRects().length > 0;
+    };
+
+    if (visible(bridge.querySelector('[class*="successbox"]'))) {
+      stopWatch();
+      openSuccess();
+      return;
+    }
+
+    if (visible(bridge.querySelector('[class*="errorbox"]'))) {
+      stopWatch();
+      showNotice(TEXT_FAILED);
+    }
+  };
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (pending) return;
+
+    hideNotice();
+
+    var invalid = validate();
+    if (invalid.length) {
+      showNotice(TEXT_REQUIRED);
+      if (invalid[0].focus) invalid[0].focus();
+      return;
+    }
+
+    if (!bridgeForm) {
+      showNotice(TEXT_FAILED);
+      return;
+    }
+
+    pending = true;
+    submit.disabled = true;
+    resetBridgeState();
+
+    setBridgeValue(BRIDGE_FIELDS.coverage_area, coverage ? coverage.value : '');
+    setBridgeValue(BRIDGE_FIELDS.material, material ? material.value : '');
+    setBridgeValue(BRIDGE_FIELDS.quantity, quantity ? quantity.value.trim() : '');
+    setBridgeValue(BRIDGE_FIELDS.name, name ? name.value.trim() : '');
+    setBridgeValue(BRIDGE_FIELDS.phone, phone ? phone.value : '');
+    setBridgeValue(BRIDGE_FIELDS.confidentiality, consent ? consent.checked : false, true);
+    setBridgeValue(BRIDGE_FIELDS.advertisement, ads ? ads.checked : false, true);
+
+    observer = new MutationObserver(readOutcome);
+    observer.observe(bridge, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
+
+    /* ПРЕДЕЛ ОЖИДАНИЯ. Отступление от плана, названное явно: там фолбэка
+       по таймауту не было вовсе. Без предела зависший запрос оставляет кнопку
+       в disabled навсегда, и клиент теряет единственный путь к конверсии.
+       Сообщение при этом может соврать «не удалось», когда заявка на самом деле
+       ушла, — ценой будет дубль в заявках, что дешевле потерянной заявки.
+       Ложного УСПЕХА таймаут не показывает ни при каких условиях. */
+    timeoutId = window.setTimeout(function () {
+      if (!pending) return;
+      stopWatch();
+      showNotice(TEXT_FAILED);
+    }, 20000);
+
+    try {
+      bridgeForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    } catch (e) {
+      stopWatch();
+      showNotice(TEXT_FAILED);
+    }
+  });
+
+  /* ── 8. Появление панели ───────────────────────────────────────────────────
+     Одна анимация на экран (VIS-5). На ≤768 не запускается: объём анимаций
+     на мобильных меньше десктопного (VIS-7), а разводится это matchMedia,
+     не дублированием кода.
+     Появление модалки и плашки идёт CSS-переходами и от библиотек не зависит:
+     GSAP не догрузился — секция теряет только этот твин.
+     Гейт написан как проверка reduce, а не как запрос no-preference: в браузере
+     без поддержки prefers-reduced-motion оба запроса ложны, и на no-preference
+     анимация не запустилась бы ни у кого. */
+  var panel = root.querySelector('.sw-form__panel');
+  if (!panel) return;
+  if (!window.gsap || !window.ScrollTrigger) return;
+
+  gsap.matchMedia().add({
+    isDesktop: '(min-width: 769px)',
+    reduceMotion: '(prefers-reduced-motion: reduce)'
+  }, function (ctx) {
+    if (ctx.conditions.reduceMotion) return;
+    if (!ctx.conditions.isDesktop) return;
+
+    var tween = gsap.from(panel, {
+      opacity: 0,
+      y: 40,
+      duration: 0.7,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: panel,
+        start: 'top 85%',
+        once: true
+      }
+    });
+
+    return function () {
+      if (tween.scrollTrigger) tween.scrollTrigger.kill();
+      tween.kill();
+      gsap.set(panel, { clearProps: 'opacity,transform' });
+    };
+  });
+
+})();
+</script>
 
 <!-- ═══════ T123 · ПОВЕДЕНИЕ: Footer (SEC-10) ═══════ -->
 
