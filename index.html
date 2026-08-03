@@ -3698,7 +3698,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    свободный член в ней допустим (2.9): это посадка секции, не размер содержимого.
    --sw-catalog-top — компенсация фиксированной шапки: высота панели плюс её
    нижний зазор. Через scroll-margin-top она становится ЕДИНСТВЕННЫМ читаемым
-   источником этой величины для поведения секции (кнопка «Выбрать» ведёт к форме
+   источником этой величины для поведения секции (карточка ведёт к форме
    и обязана встать под шапку, а не под неё). Приём и мотив — как у sw-portfolio:
    секция не обращается ни к DOM чужого блока, ни к его классам.
 
@@ -3948,13 +3948,14 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 }
 
 /* ─── сетка карточек ─── */
-/* Две колонки на ≤768, три на ≥769 (бриф секции). Расхождение с таблицей
-   design_system 7 (4 / 3 / 2) — долг документации.
+/* Одна колонка на ≤768, три на ≥769 (решение пользователя; в брифе секции на
+   компактном состоянии стояли две). Расхождение с таблицей design_system 7
+   (4 / 3 / 2) — долг документации.
    gap пропорциональный, а не плоский --sw-space-24: 2.9 требует доли вьюпорта,
    верх шкалы 26px совпадает с токеном по величине. */
 .sw-catalog__list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(10px, 1vw, 26px);
 }
 
@@ -3962,8 +3963,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 /* Собственного фона, рамки и тени не имеет (ответ 6): лежит прямо на выделенной
    области. Отступление от design_system 6.6 зафиксировано брифом — там карточка
    описана как белая панель с тенью и как целиком интерактивный элемент.
-   Интерактивна здесь только кнопка: вложить button в ссылку нельзя, разметка
-   стала бы невалидной, а таб-порядок — сломанным.
+   Интерактивна здесь только ссылка-фото: отдельного контрола в карточке нет,
+   кликается вся площадь фотографии.
    container-type: inline-size — от ширины карточки считаются радиус фото и её
    внутренний зазор. container-name не объявляется намеренно: контейнерных
    запросов секция не использует, а свободное имя не должно пересекаться
@@ -3988,15 +3989,13 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    до загрузки. overflow: hidden держит и скругление, и scale фото на hover —
    внутри него фото уезжает, не сдвигая соседей.
 
-   ЭТОТ УЗЕЛ — <a>, А НЕ ОБЁРТКА. Кликается всё фото целиком, метка «Выбрать»
-   в углу — его визуальный признак, а не отдельный контрол. Кнопку внутрь ссылки
-   вложить нельзя: вложенные интерактивные элементы дают невалидную разметку
-   и ломают таб-порядок, поэтому метка — span.
-   Следствие для тач-минимума PRD 14: целью стало фото (от 103×138 на 320),
-   и собственная высота 44px метке больше не нужна — она неинтерактивна.
-   Доступное имя ссылки несёт aria-label; в него входит видимая метка «Выбрать»
-   (WCAG 2.5.3 «Label in Name»). alt фотографии остаётся заполненным (SEO-4),
-   но в озвучке ссылки его перекрывает aria-label.
+   ЭТОТ УЗЕЛ — <a>, А НЕ ОБЁРТКА. Кликается всё фото целиком; видимой метки
+   на нём нет, вложенных контролов тоже — вся площадь фотографии и есть цель.
+   Следствие для тач-минимума PRD 14: цель — фото (от 103×138 на 320),
+   отдельного узла высотой 44px внутри ссылки не требуется.
+   Доступное имя ссылки несёт aria-label. Видимого текста в ссылке нет, поэтому
+   WCAG 2.5.3 «Label in Name» к ней не применяется. alt фотографии остаётся
+   заполненным (SEO-4), но в озвучке ссылки его перекрывает aria-label.
    text-decoration и подсветка тапа снимаются явно: сброса в проекте нет. */
 .sw-catalog__media {
   position: relative;
@@ -4021,9 +4020,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
 /* ─── название ─── */
 /* Настоящий h3 (SEO-2, CLAUDE.md 7): уровень внутри секции, H2 несёт лид.
-   Стоит под фото и занимает всю ширину карточки: метка уехала на фото, делить
-   с ней ряд больше не с кем. Верхний зазор — доля ширины карточки, замер
-   по образцу card.png (3,8%). */
+   Стоит под фото и занимает всю ширину карточки: делить ряд не с кем.
+   Верхний зазор — доля ширины карточки, замер по образцу card.png (3,8%). */
 .sw-catalog__title {
   margin: clamp(8px, 3.8cqi, 27px) 0 0;
   padding: 0;
@@ -4033,11 +4031,11 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   line-height: var(--sw-lh-3, 1.24);
 }
 
-/* ─── метка «Выбрать» и кнопка «Показать ещё» ─── */
-/* Оформление одно на оба элемента (ответ 12: по визуалу они одинаковы), но
-   природа у них разная: в карточке это НЕметка на ссылке-фото (span), внизу —
-   настоящий button. Поэтому общий здесь только внешний вид, а состояния и кегль
-   разведены ниже.
+/* ─── кнопка «Показать ещё» ─── */
+/* Класс разложен надвое намеренно: sw-catalog__cta несёт внешний вид,
+   sw-catalog__cta--more — кегль и состояния контрола. Второго потребителя
+   базового класса в секции нет: метка «Выбрать» на карточках снята, кликается
+   вся площадь фотографии.
    Вариант design_system 6.7: ведёт на якорь внутри страницы, виртуальной
    страницы не создаёт, своей цели аналитики не имеет (PRD 11). Цвета оттуда
    дословно. Отличия, все сознательные и совпадающие с решениями Портфолио:
@@ -4047,8 +4045,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
      — высота не задаётся клампом, её даёт контент через padding в em; верх шкалы
        120px в 6.7 задан композицией Hero (кнопка во всю ширину панели) и сюда
        не переносится;
-     — инверсия цветов на ≤425 НЕ переносится: элемент лежит на фото и на светлой
-       подложке, светлая заливка сделала бы его невидимым.
+     — инверсия цветов на ≤425 НЕ переносится: кнопка лежит на светлой подложке
+       выделенной области, светлая заливка сделала бы её невидимой.
    Стили UA-кнопки и подчёркивание снимаются явно: сброса в проекте нет. */
 .sw-catalog__cta {
   display: inline-flex;
@@ -4073,28 +4071,11 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   transition: background-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
 }
 
-/* Метка в правом нижнем углу фото.
-   КЕГЕЛЬ — ДОЛЯ ШИРИНЫ КАРТОЧКИ, А НЕ СТУПЕНЬ ШКАЛЫ. Прежний --sw-fs-2 задавал
-   размер от вьюпорта, а метка лежит внутри карточки, ширина которой постоянной
-   долей вьюпорта не является: на 1440 три колонки давали карточку 396px, и метка
-   на ступени шкалы (20px) закрывала фото почти на треть ширины. Доля 3.9cqi
-   держит её постоянным процентом фотографии на всех ширинах и на 2560 совпадает
-   с прежним значением 28px.
-   Минимум 12px — нижний порог читаемости (design_system 2.2). Тач-минимума
-   у метки нет и быть не должно: она неинтерактивна, целью клика служит всё фото.
-   Отступ от углов — та же доля карточки. */
-.sw-catalog__media .sw-catalog__cta {
-  position: absolute;
-  right: clamp(6px, 2.2cqi, 16px);
-  bottom: clamp(6px, 2.2cqi, 16px);
-  font-size: clamp(12px, 3.9cqi, 28px);
-  pointer-events: none;
-}
-
-/* Кнопка раскрытия. Кегль тот же по величине, но доля берётся от sw-main:
-   кнопка стоит вне карточки, и своей коробки-контейнера у неё нет. 1.22cqi
-   от внутренней ширины панели равны 3.9cqi карточки на всех ширинах, где
-   в ряду три колонки, — метки и кнопка совпадают по кеглю.
+/* Кнопка раскрытия. КЕГЕЛЬ — ДОЛЯ ВНУТРЕННЕЙ ШИРИНЫ ПАНЕЛИ (sw-main), А НЕ
+   СТУПЕНЬ ШКАЛЫ: кнопка стоит вне карточки, своей коробки-контейнера у неё нет,
+   а ступень --sw-fs-2 задавала бы размер от вьюпорта. Доля 1.22cqi проверена
+   замером и на 2560 даёт 28px.
+   Минимум 12px — нижний порог читаемости (design_system 2.2).
    min-height: 44px здесь ОСТАЁТСЯ: это настоящий контрол и настоящая тач-цель. */
 .sw-catalog__cta--more {
   min-height: 44px;
@@ -4104,14 +4085,12 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
 /* :active объявлен без условия (hover: hover) — на тач-устройстве это
    единственный отклик на нажатие; на iOS Safari к нему нужен слушатель касания
-   на самом элементе, он в поведении секции. У карточки нажатие ловит ссылка-фото,
-   а красится вложенная метка. */
-.sw-catalog__media:active .sw-catalog__cta,
+   на самом элементе, он в поведении секции. */
 .sw-catalog__cta--more:active {
   background: var(--sw-color-link-hover, #A68A73);
 }
 
-/* ─── «Показать ещё» ─── */
+/* ─── ряд «Показать ещё» ─── */
 /* Ряд с кнопкой стоит после сетки, внутри выделенной области. В разметке несёт
    hidden: без скрипта показаны ВСЕ карточки, и кнопке нечего раскрывать —
    секция обязана переживать отсутствие JS без потери контента. Показывает её
@@ -4142,8 +4121,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   outline-offset: -4px;
 }
 
-/* У карточки фокусируется ссылка-фото, а не метка: метка неинтерактивна и
-   в таб-порядок не попадает. Кольцо обводит фотографию целиком. */
+/* У карточки фокусируется ссылка-фото — единственный интерактивный узел внутри
+   неё. Кольцо обводит фотографию целиком. */
 .sw-catalog__media:focus-visible,
 .sw-catalog__cta--more:focus-visible {
   outline: 2px solid var(--sw-color-focus, #242424);
@@ -4170,12 +4149,10 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   .sw-catalog__filter:hover .sw-catalog__filter-icon--dark { opacity: 0; }
   .sw-catalog__filter:hover .sw-catalog__filter-icon--light { opacity: 1; }
 
-  .sw-catalog__media:hover .sw-catalog__cta,
   .sw-catalog__cta--more:hover {
     background: var(--sw-color-cta-hover, #0D0D0D);
   }
 
-  .sw-catalog__media:active .sw-catalog__cta,
   .sw-catalog__cta--more:active {
     background: var(--sw-color-link-hover, #A68A73);
   }
@@ -4294,7 +4271,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
      документации к PRD 10.1.
      alt собран по шаблону CLAUDE.md: «Каменный ковёр {название} - укладка
      в Сочи и Краснодаре». loading="lazy" — секция не первый экран (NFR-4).
-     ANL: у кнопок «Выбрать» появляется точка reachGoal по ANL-3, имя цели
+     ANL: у ссылок-фото карточек появляется точка reachGoal по ANL-3, имя цели
      не назначено — вызова нет, стоит маркер. -->
 <section class="sw-catalog" id="sw-catalog">
   <div class="sw-catalog__container">
@@ -4376,7 +4353,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild6563-3064-4165-b038-363132666135/_.webp"
                        alt="Каменный ковёр Берег крыма - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Берег крыма</h3>
               </article>
@@ -4388,7 +4364,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3839-3030-4863-a435-353135336437/photo.webp"
                        alt="Каменный ковёр Дагестан - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Дагестан</h3>
               </article>
@@ -4400,7 +4375,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild6131-6566-4431-b132-343263646132/_.webp"
                        alt="Каменный ковёр Жемчуг крыма - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Жемчуг крыма</h3>
               </article>
@@ -4412,7 +4386,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3235-6334-4265-a337-663432323137/photo.webp"
                        alt="Каменный ковёр Каспий - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Каспий</h3>
               </article>
@@ -4424,7 +4397,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild6331-6631-4263-a233-643837343462/_.webp"
                        alt="Каменный ковёр Красное море - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Красное море</h3>
               </article>
@@ -4436,7 +4408,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3036-6535-4639-b636-393735343331/_.webp"
                        alt="Каменный ковёр Мрамор белый - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Мрамор белый</h3>
               </article>
@@ -4448,7 +4419,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3963-3036-4638-b164-343139613239/__.webp"
                        alt="Каменный ковёр Мрамор микс(светлый) - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Мрамор микс(светлый)</h3>
               </article>
@@ -4460,7 +4430,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3532-3034-4130-b764-626538303835/__1_.webp"
                        alt="Каменный ковёр Мрамор микс 1(тёмный) - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Мрамор микс 1(тёмный)</h3>
               </article>
@@ -4472,7 +4441,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3136-3335-4532-b532-653237636635/__3.webp"
                        alt="Каменный ковёр Мрамор микс 3 - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Мрамор микс 3</h3>
               </article>
@@ -4484,7 +4452,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild6638-6664-4233-b837-633833666338/_.webp"
                        alt="Каменный ковёр Мрамор розовый - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Мрамор розовый</h3>
               </article>
@@ -4496,7 +4463,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3534-3962-4638-b932-623963313035/_.webp"
                        alt="Каменный ковёр Мрамор серый - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Мрамор серый</h3>
               </article>
@@ -4508,7 +4474,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3535-3763-4234-b666-303335646437/__.webp"
                        alt="Каменный ковёр Мраморное море(бронза) - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Мраморное море(бронза)</h3>
               </article>
@@ -4520,7 +4485,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3333-6164-4030-a539-633732393366/__.webp"
                        alt="Каменный ковёр Мраморное море(золото) - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Мраморное море(золото)</h3>
               </article>
@@ -4532,7 +4496,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3730-3338-4636-b938-616537386163/__.webp"
                        alt="Каменный ковёр Мраморное море(серебро) - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Мраморное море(серебро)</h3>
               </article>
@@ -4544,7 +4507,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild6463-3734-4465-b337-396537633734/_.webp"
                        alt="Каменный ковёр Ореховая роща - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Ореховая роща</h3>
               </article>
@@ -4556,7 +4518,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild6363-3631-4861-b637-363265626466/_.webp"
                        alt="Каменный ковёр Северное море - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Северное море</h3>
               </article>
@@ -4568,7 +4529,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3038-3739-4162-b931-316432323132/photo.webp"
                        alt="Каменный ковёр Скала - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Скала</h3>
               </article>
@@ -4580,7 +4540,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3062-6235-4134-b933-316364626536/_.webp"
                        alt="Каменный ковёр Чёрное море - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Чёрное море</h3>
               </article>
@@ -4592,7 +4551,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3938-3539-4664-b332-366337633366/_.webp"
                        alt="Каменный ковёр Чёрный мрамор - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Чёрный мрамор</h3>
               </article>
@@ -4604,7 +4562,6 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                        src="https://static.tildacdn.com/tild3437-3232-4964-a239-373434373130/_.webp"
                        alt="Каменный ковёр Южный берег - укладка в Сочи и Краснодаре"
                        loading="lazy">
-                  <span class="sw-catalog__cta">Выбрать</span>
                 </a>
                 <h3 class="sw-catalog__title">Южный берег</h3>
               </article>
@@ -8980,8 +8937,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   }
 
   /* ── 2. Фото карточки: якорь к форме с подстановкой материала ──────────────
-     Слушатель висит на ссылке-фото, а не на метке «Выбрать»: метка — span внутри
-     этой же ссылки, кликается вся площадь фотографии.
+     Слушатель висит на ссылке-фото: кликается вся площадь фотографии, других
+     интерактивных узлов в карточке нет.
      Контракт 1 (PRD 10). Способ выбран без перезагрузки страницы: URL-параметр
      form-setter-* потребовал бы полной перезагрузки, а с ней теряются и позиция
      скролла, и выбранный фильтр.
