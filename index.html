@@ -363,7 +363,7 @@
    локальным HTTP-сервером. */
 @font-face {
   font-family: 'Inter';
-  src: url('/Design_system/Fonts/Inter-Variable.woff2') format('woff2');
+  src: url('./Design_system/Fonts/Inter-Variable.woff2') format('woff2');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
@@ -378,7 +378,7 @@
    у шрифта нет. Файл вариативный, синтеза начертаний не происходит. */
 @font-face {
   font-family: 'Jura';
-  src: url('/Design_system/Fonts/Jura-Variable.woff2') format('woff2');
+  src: url('./Design_system/Fonts/Jura-Variable.woff2') format('woff2');
   font-weight: 300 700;
   font-style: normal;
   font-display: swap;
@@ -1661,7 +1661,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
         <!-- Единственная H1 на всю страницу. Два span на две группы слов,
              перенос строк естественный. -->
         <h1 class="sw-hero__title">
-          <span>Каменный ковёр,</span>
+          <span>Укладка каменного ковра,</span>
           <span class="sw-hero__title-accent">в Краснодаре, Сочи и Крыму</span>
         </h1>
 
@@ -3115,6 +3115,58 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   pointer-events: none;
 }
 
+/* Постер — первый кадр ролика, закрывает плеер, пока тот не готов. Атрибута
+   poster у iframe нет, и приём Hero сюда не переносится: кадр приходится класть
+   отдельным слоем.
+
+   КРОП-МАТЕМАТИКА ФРЕЙМА ПОСТЕРУ НЕ НУЖНА. К <img> применяется object-fit,
+   поэтому здесь простая растяжка на всю рамку, без пары объявлений на cqw/cqh
+   и без трансформа: кадрирование и центровку делает cover сам. Скругление режет
+   overflow рамки — свой радиус не нужен.
+
+   Z-INDEX НЕ ЗАДАЁТСЯ НАМЕРЕННО. Постер и фрейм оба позиционированы без
+   z-index, то есть лежат на одном нулевом уровне наложения, и порядок узлов
+   в DOM кладёт постер поверх плеера — потому он в разметке и стоит после
+   фрейма. Пилюли --over со своим z-index: 1 остаются выше обоих, ряд поверх
+   видео постером не закрывается. Область действия ограничена медиа: contain
+   от container-type делает его контекстом наложения.
+
+   pointer-events: none — тот же мотив, что у фрейма: постер закрывает всю
+   площадь медиа, и хит-тест обязан остаться ровно таким же, каким был без него.
+
+   КЛАСС --hidden ВЕШАЕТ ПОВЕДЕНИЕ СЕКЦИИ ПО ФАКТУ ИДУЩЕГО ВИДЕО, а не по
+   загрузке фрейма и не по таймеру: постер здесь затычка на время загрузки и
+   снимается ровно тогда, когда плеер отдал первый кадр. Разбор сигнала и замер
+   разрыва — в блоке 2 поведения секции.
+   Отсюда и природа перехода: кроссфейд начинается в момент старта видео, а
+   удерживать кадр лишнее время он не может — снимаются оба слоя одной строкой.
+   Не загрузился Kinescope (сеть, блокировщик) — сигнала нет, и в карточке
+   остаётся кадр вместо чёрного прямоугольника. Это деградация, а не дефект. */
+.sw-portfolio__poster {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  transition: opacity var(--sw-dur-slow, 400ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-portfolio__poster--hidden {
+  opacity: 0;
+}
+
+/* При reduced-motion постер снимается мгновенно и без перехода: под ним у плеера
+   появляются контролы, и кроссфейд был бы движением ровно там, где его просили
+   не делать. Медиазапрос по настройке, не по ширине, — в реестр границ 2.7
+   не входит. */
+@media (prefers-reduced-motion: reduce) {
+  .sw-portfolio__poster {
+    transition: none;
+  }
+}
+
 /* ─── карточка ýже 460px: пилюли уходят на видео ─── */
 /* Контейнерный запрос, не медиазапрос: пилюли переезжают тогда, когда тесно
    именно карточке, на любой ширине окна. Опорная коробка — sw-card, то есть
@@ -3283,7 +3335,29 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
      Иконка локации декоративна — alt пустой и aria-hidden, смысл несёт подпись
      рядом. Видео — iframe Kinescope в фоновом режиме (background=1: без
      контролов, autoplay, muted, loop одним параметром); title обязателен, это
-     доступное имя фрейма. loading="lazy" — секция не первый экран (NFR-4).
+     доступное имя фрейма.
+     Постер — первый кадр ролика. Атрибута poster у iframe нет, приём Hero сюда
+     не переносится, поэтому кадр лежит отдельным слоем поверх плеера и снимается
+     кроссфейдом, когда тот готов. Декоративен — alt пустой и aria-hidden,
+     доступное имя медиа уже несёт title фрейма, второе было бы дублем. Стоит
+     ПОСЛЕ фрейма в DOM намеренно: порядок узлов и решает наложение, см. стили.
+     loading="lazy" — секция не первый экран (NFR-4).
+
+     У ПЕРВОГО ПОСТЕРА lazy СНЯТ, У ОСТАЛЬНЫХ ТРЁХ ОСТАВЛЕН. Асимметрия
+     намеренная, решение пользователя, и в глаза она не бросается — при правке
+     секции её легко потерять. Причина в замере: порог отложенной загрузки у
+     iframe заметно шире, чем у картинок, и на вьюпорте 1920 при скролле в нуле
+     Chrome запросил три embed-а Kinescope из четырёх и только один баннер из
+     четырёх. Постер, чей webp не успел прийти к готовности плеера, снимается
+     пустым и работы не делает: дефекта нет (<img> без загруженного источника
+     ничего не рисует, прозрачность к приходу картинки уже нулевая), но и
+     разогрев плеера закрыть нечем.
+     Первую карточку клиент встречает на полной скорости скролла — ей кадр
+     нужен гарантированно, поэтому её постер грузится сразу, ценой ≈100 КБ.
+     Остальные три он проходит медленнее, их плееры к тому моменту разогреты,
+     и ради них тянуть ещё ≈310 КБ на загрузке страницы смысла нет.
+     fetchpriority="low" держит первый баннер в очереди позади первого экрана.
+
      ANL: у кнопки «Обсудить проект» появляется точка reachGoal по ANL-3,
      имя цели не назначено — вызова нет, стоит маркер. -->
 <section class="sw-portfolio" id="sw-portfolio">
@@ -3352,6 +3426,11 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                     loading="lazy"
                     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"></iframe>
 
+            <!-- Единственный постер без lazy — разбор в шапке разметки секции. -->
+            <img class="sw-portfolio__poster"
+                 src="https://static.tildacdn.com/tild6665-3931-4437-b639-653435373362/Banner_2.webp"
+                 alt="" aria-hidden="true" fetchpriority="low">
+
           </div>
         </div>
       </article>
@@ -3414,6 +3493,10 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                     title="Покрытие садовых дорожек каменным ковром — видео с объекта в Краснодаре"
                     loading="lazy"
                     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"></iframe>
+
+            <img class="sw-portfolio__poster"
+                 src="https://static.tildacdn.com/tild3233-6230-4537-b464-303630383031/Banner_4.webp"
+                 alt="" aria-hidden="true" loading="lazy">
 
           </div>
         </div>
@@ -3478,6 +3561,10 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                     loading="lazy"
                     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"></iframe>
 
+            <img class="sw-portfolio__poster"
+                 src="https://static.tildacdn.com/tild3663-6133-4263-b963-353363393062/Banner_5.webp"
+                 alt="" aria-hidden="true" loading="lazy">
+
           </div>
         </div>
       </article>
@@ -3540,6 +3627,10 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                     title="Покрытие полов каменным ковром — видео с объекта в Сочи"
                     loading="lazy"
                     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"></iframe>
+
+            <img class="sw-portfolio__poster"
+                 src="https://static.tildacdn.com/tild3261-3030-4131-a666-353561633762/Banner_3.webp"
+                 alt="" aria-hidden="true" loading="lazy">
 
           </div>
         </div>
@@ -8474,13 +8565,145 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
     });
   };
 
-  applyMotionState();
+  /* ── 2. Постер поверх плеера ───────────────────────────────────────────────
+     Кадр закрывает медиа ровно до того момента, как пошло видео, и снимается
+     кроссфейдом — сам переход и мотив слоя в стилях секции. Постер здесь
+     затычка на время загрузки, и ничего больше: задерживать воспроизведение
+     он не имеет права, минимального времени показа у него нет. Загрузился
+     ролик мгновенно — постер снимается мгновенно, не успев побыть на экране.
+
+     СНИМАЕТСЯ ПО СОБЫТИЮ ПЛЕЕРА, А НЕ ПО load ФРЕЙМА И НЕ ПО ТАЙМЕРУ. load
+     означает, что загрузился документ embed-страницы, и до первого кадра от
+     него ещё далеко; любая же фиксированная задержка после load — это угадывание
+     чужой скорости, которое мимо цели в обе стороны сразу.
+     ЗАМЕР В ЦЕХЕ, 1920, отложенная загрузка карточек 3 и 4: ready приходит на
+     882 и 863 мс, первый timeupdate — на 5047 и 6647 мс. Разрыв в 4–6 секунд,
+     и он же цена ошибки: снятый по load постер оголял бы пустую рамку почти на
+     всё время раскрутки. По ready снимать нельзя по той же причине — это
+     готовность объекта плеера, а не картинки на экране.
+
+     ПРОТОКОЛ — PLAYER.JS, ОТКРЫТЫЙ, А НЕ ВНУТРЕННИЙ КОНТРАКТ KINESCOPE. Плеер
+     представляется сам: context: "player.js", version: "0.0.11", и в payload
+     события ready перечисляет, что умеет, — ready, play, pause, ended,
+     timeupdate, progress, error. Спецификация публичная (playerjs.io), её
+     держит не Kinescope, поэтому завязка допустима. Ответа на ready ждать
+     обязательно: сам плеер шлёт только его, на остальное нужно подписаться.
+     Взят timeupdate с seconds > 0 — единственное событие, которое доказывает,
+     что кадры реально идут. play в фоновом режиме не пришёл ни разу, хотя
+     в списке заявлен, и опираться на него нельзя.
+
+     ИСТОЧНИК СООБЩЕНИЯ ПРОВЕРЯЕТСЯ ПО ОКНУ, А НЕ ПО СТРОКЕ ORIGIN. Сравнение
+     event.source с contentWindow наших же фреймов подделать нельзя, и оно
+     заодно говорит, КАКОЙ карточке принадлежит событие. Проверка origin
+     подстрокой рядом с этим ничего не добавляет, зато тихо отвалилась бы,
+     смени Kinescope поддомен embed-а. Ответ уходит строго на event.origin,
+     не на звёздочку.
+
+     СТРАХОВКА — ПОЗДНИЙ ТАЙМЕР ОТ load, И ОНА НЕ РАБОЧИЙ ПУТЬ, А СЕТЬ. Молчит
+     протокол (блокировщик, смена версии) — постер обязан уйти сам, иначе он
+     повиснет над идущим видео навсегда, а это ровно то, чего быть не должно.
+     Порог заведомо позже измеренного разброса, чтобы в норме до него не
+     доходило никогда: обгонит он настоящее событие — вернётся та самая пустая
+     рамка, от которой постер и поставлен.
+
+     Готовность запоминается и назад не сбрасывается. Переключение настройки на
+     живой странице переписывает src и поднимает второй ready; поднимать постер
+     заново на это время не нужно — плеер уже показан, и мигание кадром было бы
+     заметнее самой перезагрузки.
+
+     При reduce постер снимается сразу и независимо от загрузки: строкой выше
+     плееру возвращены контролы, и до них нужно дотянуться. Состояние считается
+     от двух условий разом, поэтому обратное переключение настройки постер
+     не воскрешает. */
+  var posters = [];
+  var frameReady = [];
+
+  var PLAYERJS_CONTEXT = 'player.js';
+  var PLAYERJS_VERSION = '0.0.11';
+
+  /* Сеть на случай молчащего протокола, мс от load фрейма. Не рабочий путь. */
+  var POSTER_FALLBACK_DELAY = 15000;
+
+  Array.prototype.forEach.call(frames, function (frame) {
+    var media = frame.parentNode;
+    posters.push(media ? media.querySelector('.sw-portfolio__poster') : null);
+    frameReady.push(false);
+  });
+
+  var applyPosterState = function () {
+    Array.prototype.forEach.call(frames, function (frame, i) {
+      var poster = posters[i];
+      if (!poster) return;
+
+      if (reduceMQ.matches || frameReady[i]) {
+        poster.classList.add('sw-portfolio__poster--hidden');
+      }
+    });
+  };
+
+  var revealFrame = function (i) {
+    if (i < 0 || frameReady[i]) return;
+    frameReady[i] = true;
+    applyPosterState();
+  };
+
+  var frameIndexOf = function (source) {
+    for (var i = 0; i < frames.length; i++) {
+      if (frames[i].contentWindow === source) return i;
+    }
+    return -1;
+  };
+
+  window.addEventListener('message', function (event) {
+    if (typeof event.data !== 'string') return;
+
+    var i = frameIndexOf(event.source);
+    if (i < 0 || !posters[i]) return;
+
+    var message;
+    try {
+      message = JSON.parse(event.data);
+    } catch (e) {
+      return;
+    }
+    if (!message || message.context !== PLAYERJS_CONTEXT) return;
+
+    if (message.event === 'ready') {
+      event.source.postMessage(JSON.stringify({
+        context: PLAYERJS_CONTEXT,
+        version: PLAYERJS_VERSION,
+        method: 'addEventListener',
+        value: 'timeupdate'
+      }), event.origin);
+      return;
+    }
+
+    if (message.event === 'timeupdate' && message.value && message.value.seconds > 0) {
+      revealFrame(i);
+    }
+  });
+
+  Array.prototype.forEach.call(frames, function (frame, i) {
+    if (!posters[i]) return;
+
+    frame.addEventListener('load', function () {
+      window.setTimeout(function () { revealFrame(i); }, POSTER_FALLBACK_DELAY);
+    });
+  });
+
+  /* Оба состояния зависят от одной настройки и обновляются вместе. */
+  var applyReduceState = function () {
+    applyMotionState();
+    applyPosterState();
+  };
+
+  applyReduceState();
 
   if (reduceMQ.addEventListener) {
-    reduceMQ.addEventListener('change', applyMotionState);
+    reduceMQ.addEventListener('change', applyReduceState);
   }
 
-  /* ── 2. Кнопка: якорь в каталог ────────────────────────────────────────────
+  /* ── 3. Кнопка: якорь в каталог ────────────────────────────────────────────
      Механизм тот же, что у кнопки Hero и пунктов меню GlobalHeader:
      scroll-behavior задавался бы по корню документа, а это глобальное правило
      и в перенесённом коде оно запрещено.
@@ -8526,7 +8749,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
     cta.addEventListener('touchstart', function () {}, { passive: true });
   });
 
-  /* ── 3. Стопка: масштаб под наездом ───────────────────────────────────────
+  /* ── 4. Стопка: масштаб под наездом ───────────────────────────────────────
      Пиннинг и наложение несёт CSS (position: sticky, порядок DOM). Отсюда
      приходит только масштаб — единственная анимация секции.
      Библиотеки проверяются поимённо: нет любой из двух — секция тихо ничего
