@@ -67,7 +67,6 @@
   --sw-color-border-strong: #C5C5C5;
   --sw-color-text: #242424;
   --sw-color-text-muted: #8F8F8F;
-  --sw-color-text-prefill: #D3D3D3;
   --sw-color-text-on-cta: #FFFFFF;
   /* Метка и иконка на тёмной пилюле. Введён брифом SEC-3 (п.0); в таблице
      design_system 2.1 его пока нет — вносится отдельным проходом. */
@@ -1869,22 +1868,24 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 /* Классы узлов, сгенерированных SplitText. Заданы явно через linesClass и
    charsClass: дефолтные имена плагина не под нашим контролем и не проходят
    правило именования.
-   Заливка живёт на СИМВОЛЕ, а не на строке: единица очереди — символ, граница
-   резкая и проходит сквозь него. В покое символ залит на 0%, то есть целиком
-   в цвете --sw-color-text-prefill; проценты подставляет поведение секции.
+   Заливка живёт на СИМВОЛЕ: градиент на нём, граница резкая и проходит сквозь
+   него. Очередь при этом ведётся по СТРОКАМ — строка идёт отдельной дорожкой,
+   дорожки перекрываются; это поведение секции, разметки оно не касается.
+   В покое символ залит на 0%, то есть целиком в цвете --sw-color-text-muted;
+   проценты подставляет поведение секции.
    -webkit-background-clip обязателен рядом с background-clip: без префикса
    в WebKit текст станет невидимым.
    Правило применяется только к сгенерированным узлам: их нет — заголовок
    стоит в финальном цвете, что и требуется на ≤1024 и при reduced-motion.
    Пробелы между словами собственных узлов не получают и остаются цветом h2 —
-   краски в них нет, видимой разницы это не даёт. В шкале очереди пробел при
+   краски в них нет, видимой разницы это не даёт. В шкале дорожки пробел при
    этом участвует наравне с символом, иначе заливка перепрыгивала бы его
    рывком; механика — в поведении секции. */
 .sw-benefits__char {
   --sw-benefits-fill: 0%;
   background-image: linear-gradient(90deg,
     var(--sw-color-text, #242424) 0 var(--sw-benefits-fill),
-    var(--sw-color-text-prefill, #D3D3D3) var(--sw-benefits-fill) 100%);
+    var(--sw-color-text-muted, #8F8F8F) var(--sw-benefits-fill) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -3820,7 +3821,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   --sw-catalog-fill: 0%;
   background-image: linear-gradient(90deg,
     var(--sw-color-text, #242424) 0 var(--sw-catalog-fill),
-    var(--sw-color-text-prefill, #D3D3D3) var(--sw-catalog-fill) 100%);
+    var(--sw-color-text-muted, #8F8F8F) var(--sw-catalog-fill) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -4840,7 +4841,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    правило именования.
    Механика заливки — как у sw-benefits__char и sw-achievements__char: градиент
    живёт на СИМВОЛЕ, граница резкая и проходит сквозь него, в покое символ залит
-   на 0%, то есть целиком в цвете --sw-color-text-prefill; проценты подставляет
+   на 0%, то есть целиком в цвете --sw-color-text-muted; проценты подставляет
    поведение секции. -webkit-background-clip обязателен рядом с background-clip:
    без префикса в WebKit текст станет невидимым.
    Правило применяется только к сгенерированным узлам: их нет — заголовок стоит
@@ -4850,7 +4851,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   --sw-about-fill: 0%;
   background-image: linear-gradient(90deg,
     var(--sw-color-text, #242424) 0 var(--sw-about-fill),
-    var(--sw-color-text-prefill, #D3D3D3) var(--sw-about-fill) 100%);
+    var(--sw-color-text-muted, #8F8F8F) var(--sw-about-fill) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -5400,7 +5401,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   --sw-achievements-fill: 0%;
   background-image: linear-gradient(90deg,
     var(--sw-color-text, #242424) 0 var(--sw-achievements-fill),
-    var(--sw-color-text-prefill, #D3D3D3) var(--sw-achievements-fill) 100%);
+    var(--sw-color-text-muted, #8F8F8F) var(--sw-achievements-fill) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -5457,6 +5458,15 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    Связывает cqi только до ~965; выше кегль равен --sw-fs-9 ровно: замер
    66,0 / 82,3 / 104 на 1440 / 1920 / 2560. Контейнер — .sw-achievements__main,
    container-type: inline-size объявлен там же. */
+/* TABULAR-NUMS ЗДЕСЬ ОБЪЯВЛЯТЬ НЕЛЬЗЯ. Моноширинные цифры Inter шире
+   пропорциональных: «30 000 м²» на 800px даёт 230,5px против 215. Потолок
+   7,4cqi ниже откалиброван так, что ряд из четырёх колонок укладывается
+   в контейнер ровно, и лишние 15,5px выносят строку за панель — замер
+   на 800px: 710px содержимого против 642px контейнера. Вернуть свойство
+   можно только вместе с пересчётом потолка (7,4 → ≈6,9cqi), а это меняет
+   кегль в покое на всём диапазоне 769–965.
+   Прежний довод «за» — дрожание суффикса «м²» на прогоне счётчиков — отпал
+   вместе со снятыми счётчиками: числа теперь неподвижны. */
 .sw-achievements__stat-value {
   margin: 0;
   padding: 0;
@@ -5740,7 +5750,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    правило именования.
    Механика заливки — как у sw-benefits__char и sw-about__char: градиент живёт
    на СИМВОЛЕ, а не на строке, граница резкая и проходит сквозь него; в покое
-   символ залит на 0%, то есть целиком в цвете --sw-color-text-prefill,
+   символ залит на 0%, то есть целиком в цвете --sw-color-text-muted,
    проценты подставляет поведение секции. -webkit-background-clip обязателен
    рядом с background-clip: без префикса в WebKit текст станет невидимым.
    Правило применяется только к сгенерированным узлам: их нет — заголовок стоит
@@ -5750,7 +5760,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   --sw-steps-fill: 0%;
   background-image: linear-gradient(90deg,
     var(--sw-color-text, #242424) 0 var(--sw-steps-fill),
-    var(--sw-color-text-prefill, #D3D3D3) var(--sw-steps-fill) 100%);
+    var(--sw-color-text-muted, #8F8F8F) var(--sw-steps-fill) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -6982,11 +6992,25 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
           <div class="sw-form__field">
             <select class="sw-form__select" id="sw-form-coverage" name="coverage_area">
               <option value=""></option>
-              <option value="Терраса">Терраса</option>
-              <option value="Бассейн">Бассейн</option>
-              <option value="Дорожки">Дорожки</option>
-              <option value="Парковка">Парковка</option>
-              <option value="Крыльцо">Крыльцо</option>
+              <option value="Автомобильная зона">Автомобильная зона</option>
+              <option value="Балкон/лоджия">Балкон/лоджия</option>
+              <option value="Борт бассейна">Борт бассейна</option>
+              <option value="Входная группа">Входная группа</option>
+              <option value="Декоративные элементы">Декоративные элементы</option>
+              <option value="Забор">Забор</option>
+              <option value="Зона коммерции">Зона коммерции</option>
+              <option value="Зона отдыха">Зона отдыха</option>
+              <option value="Крыша">Крыша</option>
+              <option value="Парковая зона">Парковая зона</option>
+              <option value="Пошаговые дорожки">Пошаговые дорожки</option>
+              <option value="Пешеходная зона">Пешеходная зона</option>
+              <option value="Садовые дорожки">Садовые дорожки</option>
+              <option value="Садовые элементы">Садовые элементы</option>
+              <option value="Стены">Стены</option>
+              <option value="Ступени">Ступени</option>
+              <option value="Терраса, беседка">Терраса, беседка</option>
+              <option value="Цоколь">Цоколь</option>
+              <option value="Другое">Другое</option>
             </select>
             <label class="sw-form__label" for="sw-form-coverage">Зона покрытия</label>
           </div>
@@ -8370,26 +8394,83 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
      Прогресс гонится через прокси-объект с onUpdate, а не анимацией самой
      переменной: @property для интерполяции процента тогда не нужен, её делает
      GSAP.
-     ПРОКСИ ОДИН НА ВЕСЬ ЗАГОЛОВОК, А НЕ ПО ОДНОМУ ТВИНУ НА ЕДИНИЦУ. Очередь
-     задаётся не последовательностью твинов, а шкалой 0…N: доля элемента
-     со слотом i равна отсечке прогресса на отрезке [i, i+1]. Причина — в том,
-     как GSAP рендерит твины: твин, не попавший в текущее положение таймлайна,
-     не рендерится вовсе и своего onUpdate не зовёт, поэтому его цель
-     застревает на последнем записанном значении, в том числе при обратном
-     скролле. Один твин с одним onUpdate переписывает все символы на каждом
-     кадре, и обратный ход отрабатывает так же точно, как прямой.
-     ЕДИНИЦА ОЧЕРЕДИ — СИМВОЛ, НЕ СТРОКА. Символы нумеруются сквозной шкалой
-     в порядке строк, поэтому строгая очередь строк получается сама собой:
-     вторая строка начинает заливаться после того, как закончилась первая.
-     Отдельного механизма для этого не требуется.
+     ПРОКСИ ОДИН НА ВЕСЬ ЗАГОЛОВОК, А НЕ ПО ОДНОМУ ТВИНУ НА СТРОКУ. Причина —
+     в том, как GSAP рендерит твины: твин, не попавший в текущее положение
+     таймлайна, не рендерится вовсе и своего onUpdate не зовёт, поэтому его
+     цель застревает на последнем записанном значении, в том числе при
+     обратном скролле. Один твин с одним onUpdate переписывает все символы
+     на каждом кадре, и обратный ход отрабатывает так же точно, как прямой.
+     СТРОКА — ОТДЕЛЬНАЯ ДОРОЖКА, А НЕ КУСОК СКВОЗНОЙ ОЧЕРЕДИ. Дорожки идут
+     внахлёст: строка i+1 трогается, когда строка i залита на треть, и конца
+     её не ждёт. Сквозная шкала 0…N ревизии 1 такого не позволяла — вторая
+     строка начиналась строго после конца первой, и заголовок дозаливался
+     тем позже, чем он длиннее.
+     СКОРОСТЬ ГРАНИЦЫ ОТ НАХЛЁСТА НЕ ЗАВИСИТ. Прокси по-прежнему гонится
+     0 → сумма длин строк × speed за окно: символов на единицу скролла
+     проходит ровно столько же, сколько раньше. Короче становится ПУТЬ —
+     max(старт строки + её длина) вместо суммы длин. Заголовок дозаливается
+     раньше при той же скорости, ради этого дорожки и заведены.
+     ДЛИТЕЛЬНОСТЬ ДОРОЖКИ ПРОПОРЦИОНАЛЬНА ДЛИНЕ СТРОКИ, поэтому граница едет
+     по экрану с одной скоростью во всех строках. Побочное следствие принято
+     сознательно: короткая строка, стоящая после длинной, дозаливается раньше
+     неё.
+     У КАЖДОЙ СТРОКИ СВОЙ РИТМ. Кривая назначается по индексу строки, набор
+     из трёх, разбор — у самих функций ниже.
      ПРОБЕЛЫ ЗАНИМАЮТ СЛОТ НАРАВНЕ С СИМВОЛАМИ. Своих узлов плагин им не даёт
      (self.chars их не содержит), поэтому слоты считаются по тексту строки,
      а не по длине массива символов. Без этого заливка перепрыгивала бы пробел
      мгновенно и шла рывками на границах слов. Краски в пробеле нет, красить
-     его не требуется — нужно только время. */
+     его не требуется — нужно только время. Нумерация слотов идёт ОТ НУЛЯ
+     В КАЖДОЙ СТРОКЕ, сквозной её больше нет. */
   var title = root.querySelector('.sw-benefits__title');
   if (!title) return;
   if (!window.gsap || !window.ScrollTrigger || !window.SplitText) return;
+
+  /* ── Ритмы заливки ─────────────────────────────────────────────────────────
+     Кривая неравномерности назначается строке по её индексу: rhythms[i % 3].
+     Все три монотонно неубывающие — граница заливки никогда не идёт назад.
+     Кривые собраны из штатных ease GSAP через parseEase: это часть core,
+     отдельного плагина не требует и своей математики в проект не заводит.
+     СЕМЕЙСТВО ТОЛЬКО SINE. Ревизия на power2 снята: в именах GSAP power1 это
+     квадрат, power2 — КУБИКА, и power2.inOut разгонялся в середине строки до
+     3-кратной средней скорости (замерено на кривой, не выведено). Формально это
+     «плавная кривая», на глаз — рывок: строка почти стоит, потом проскакивает
+     середину и замирает.
+     У sine.inOut пик 1,57 средней, у составных ритмов после смеси 1,34.
+     Новую кривую в набор брать только посчитав её пик; всё, что выше ~1,6, сюда
+     не годится.
+     У ритмов 2 и 3 стык половин попадает ВНУТРЬ строки, и в этой точке
+     скорость ушла бы в ноль — граница вставала бы посреди слова. Поэтому они
+     смешиваются с линейной в отношении BLEND. Ритм 1 не смешивается: его нули
+     стоят на краях строки, где они и нужны.
+     BLEND поднят с 0,45 до 0,6 вместе с переходом на sine: у пологих кривых
+     доля линейной нужна меньше, а характер ритма от неё как раз и страдал.
+     Набор дублируется в каждой секции с заливкой. Общий хелпер стал бы третьим
+     контрактом между секциями (CLAUDE.md 6), а секция обязана переживать
+     отсутствие соседей — дублирование здесь дешевле связанности. */
+  var STAGGER = 1 / 3;   /* старт следующей строки — на трети предыдущей */
+  var BLEND = 0.6;       /* доля кривой против линейной у составных ритмов */
+
+  var easeInOut = gsap.parseEase('sine.inOut');
+  var easeOut = gsap.parseEase('sine.out');
+  var easeIn = gsap.parseEase('sine.in');
+
+  var rhythms = [
+    /* 1 — один разгон и торможение */
+    function (u) {
+      return easeInOut(u);
+    },
+    /* 2 — бодрый старт, вязнет к середине, дотягивает к концу */
+    function (u) {
+      var w = u < 0.5 ? 0.5 * easeOut(u * 2) : 0.5 + 0.5 * easeIn(u * 2 - 1);
+      return BLEND * w + (1 - BLEND) * u;
+    },
+    /* 3 — две волны */
+    function (u) {
+      var w = u < 0.5 ? 0.5 * easeInOut(u * 2) : 0.5 + 0.5 * easeInOut(u * 2 - 1);
+      return BLEND * w + (1 - BLEND) * u;
+    }
+  ];
 
   var initTitleFill = function () {
     gsap.matchMedia().add({
@@ -8398,6 +8479,10 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
     }, function (ctx) {
       var cond = ctx.conditions;
       if (!cond.isDesktop || cond.reduceMotion) return;
+
+      /* Твин упреждения живёт вне таймлайна и плагину не подчиняется, поэтому
+         ссылка на него держится здесь: её гасят и ре-сплит, и выход из ветки. */
+      var chase = null;
 
       /* autoSplit: при font-display: swap строки, посчитанные на фолбэк-шрифте,
          разъезжаются в момент подмены на Inter; на ресайзе строки пересчитываются
@@ -8414,21 +8499,29 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
         autoSplit: true,
         aria: 'none',
         onSplit: function (self) {
-          var chars = self.chars;
-          var slots = [];
-          var slot = 0;
-          var ci = 0;
+          if (chase) chase.kill();
 
-          /* Разметка слотов. Идём по тексту каждой строки: непробельный символ
+          var chars = self.chars;
+          var lines = [];
+          var ci = 0;
+          var start = 0;
+          var sum = 0;
+
+          /* Разметка дорожек. Идём по тексту каждой строки: непробельный символ
              забирает очередной узел из self.chars, пробел узла не имеет, но
              слот всё равно тратит. Пробельные символы по краям строки
-             пропускаются — это отступы разметки, а не текст. */
-          self.lines.forEach(function (line) {
+             пропускаются — это отступы разметки, а не текст.
+             Слоты нумеруются от нуля в каждой строке; общая ось задаётся полем
+             start, которое накапливает треть длины каждой пройденной строки. */
+          self.lines.forEach(function (line, li) {
             var text = line.textContent;
             var from = 0;
             var to = text.length;
             while (from < to && /\s/.test(text.charAt(from))) from++;
             while (to > from && /\s/.test(text.charAt(to - 1))) to--;
+
+            var slots = [];
+            var slot = 0;
 
             for (var i = from; i < to; i++) {
               if (/\s/.test(text.charAt(i))) {
@@ -8437,42 +8530,142 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                 slots.push({ el: chars[ci++], at: slot++ });
               }
             }
+
+            lines.push({
+              slots: slots,
+              len: slot,
+              start: start,
+              rhythm: rhythms[li % rhythms.length]
+            });
+
+            start += STAGGER * slot;
+            sum += slot;
           });
 
-          var total = slot;
-          var proxy = { pos: 0 };
+          /* ДВЕ ПОЗИЦИИ, А НЕ ОДНА. driver — позиция, заданная скроллом; render —
+             та, что рисуется. Раньше они совпадали: scrub догонял скролл, и на
+             остановке заливка приходила ровно в точку скролла и замирала.
+             Теперь render гонится отдельным твином к цели, которая стоит ВПЕРЕДИ
+             driver на LEAD слотов, поэтому после остановки скролла заливка
+             продолжает идти к ней и добирает этот запас сама.
+             Цена принята сознательно: позиция заливки больше не является чистой
+             функцией скролла — она зависит от того, как до неё доехали. Обратный
+             ход перестал приходить символ в символ в ту же точку, что прямой.
+             Иначе «продолжает двигаться после остановки» не сделать вовсе. */
+          var driver = { pos: 0 };
+          var render = { pos: 0 };
 
+          /* Прогресс дорожки нормируется её собственной длиной, ритм гнёт его
+             неравномерно, результат разворачивается обратно в слоты — и уже
+             по слотам режется граница внутри символа. Пустая строка (len 0)
+             узлов не имеет, деление на ноль отсекается до цикла. */
           var paint = function () {
-            for (var i = 0; i < slots.length; i++) {
-              var v = proxy.pos - slots[i].at;
-              v = v < 0 ? 0 : (v > 1 ? 1 : v);
-              slots[i].el.style.setProperty('--sw-benefits-fill', (v * 100) + '%');
+            for (var li = 0; li < lines.length; li++) {
+              var ln = lines[li];
+              var u = ln.len ? (render.pos - ln.start) / ln.len : 1;
+              u = u < 0 ? 0 : (u > 1 ? 1 : u);
+              var edge = ln.rhythm(u) * ln.len;
+
+              for (var i = 0; i < ln.slots.length; i++) {
+                var v = edge - ln.slots[i].at;
+                v = v < 0 ? 0 : (v > 1 ? 1 : v);
+                ln.slots[i].el.style.setProperty('--sw-benefits-fill', (v * 100) + '%');
+              }
             }
           };
 
           paint();
 
-          /* Окно — 48% высоты секции: заливка стартует, когда нижняя кромка
-             вьюпорта прошла 16% секции, и заканчивается на 64%. Обе отсечки
-             взяты от одной опоры (bottom вьюпорта), поэтому длина окна не
-             зависит ни от высоты экрана, ни от высоты секции.
-             scrub привязывает прогресс к скроллу в обе стороны; 0,5 — время
-             догона, а не смещение: на остановке прогресс приходит ровно в ту
-             же точку и при прямом, и при обратном ходе. Пина нет. */
+          /* Множитель скорости 0,78 — общий для всех пяти точек заливки.
+             Ручка посекционная, менять здесь, не трогая соседей.
+             ЗАПАС У НЕЁ ПОЧТИ ВЫБРАН, И ГЛАВНАЯ РУЧКА СКОРОСТИ НЕ ОНА. Заливка
+             обязана успеть на длине окна: sum × speed ≥ длина пути. У sw-steps
+             путь 32,3 при сумме 45, то есть speed ниже 0,72 там не опустить
+             вовсе — заголовок не дозальётся до выхода из экрана. Ощущение
+             «быстро» задаёт не средняя скорость, а ПИК кривой ритма, и
+             замедляться надо через семейство ease, а не через этот множитель. */
+          var speed = 0.78;
+          var maxPos = sum * speed;
+
+          /* LEAD — насколько заливка убегает вперёд позиции скролла, в слотах.
+             12 слотов это примерно 12 символов: столько она проходит сама после
+             того, как скролл встал.
+             Упреждение постоянное, а не всплеск на остановке: заливка всё время
+             идёт на LEAD впереди скролла, и остановка просто даёт ей добрать
+             остаток. Всплеск пришлось бы потом откатывать назад, а откат — это
+             заливка, ползущая в обратную сторону при неподвижном скролле.
+             duration 2,2 с — время, за которое запас добирается. Оно же задаёт
+             мягкость слежения: на быстром скролле заливка отстаёт и подтягивается
+             плавно. Всё сглаживание теперь здесь, поэтому scrub у триггера снят
+             в true — второй слой догона поверх этого давал рывок на старте
+             прокрутки.
+             Ease синусный, не power2: на power2.out (в именах GSAP это кубика)
+             твин выбрасывал 11 символов из 12 за первые 0,4 с — запас не
+             «добирался», а выстреливал. sine.out открывается со скоростью 1,57
+             средней вместо 3, и вместе с удвоенной длительностью тот же запас
+             растягивается примерно на 2 с. */
+          var LEAD = 12;
+
+          /* RAMP — расстояние, на котором упреждение набирается с нуля до
+             полного. Оно обязано быть КРАТНО БОЛЬШЕ LEAD: при RAMP = LEAD
+             упреждение росло ровно с той же скоростью, что и сам скролл, и
+             заливка на первых символах шла вдвое быстрее — это и был скачок
+             в начале. 36 против 12 дают прибавку 33%, а не 100%. */
+          var RAMP = 36;
+          var setRender = gsap.quickTo(render, 'pos', {
+            duration: 2.2,
+            ease: 'sine.out',
+            onUpdate: paint
+          });
+
+          /* Упреждение набирается по мере удаления от края окна и у самого его
+             начала равно нулю. Без этого заливка прыгала бы на 12 символов в тот
+             момент, когда заголовок только показался снизу, — при неподвижном
+             скролле и без единого действия клиента. Тот же расчёт работает и на
+             обратном ходе, от дальнего края. */
+          var lastPos = 0;
+          var retarget = function () {
+            var dir = driver.pos >= lastPos ? 1 : -1;
+            lastPos = driver.pos;
+
+            var room = dir > 0 ? driver.pos : maxPos - driver.pos;
+            var ahead = LEAD * (room < RAMP ? room / RAMP : 1);
+            var target = driver.pos + ahead * dir;
+
+            if (target < 0) target = 0;
+            else if (target > maxPos) target = maxPos;
+
+            setRender(target);
+          };
+
+          /* Триггер — сам заголовок, окно top bottom → bottom top: та же схема,
+             что у остальных четырёх точек заливки. Прежнее окно ревизии 1
+             (16% → 64% высоты секции) снято на замедлении: доля секции задаёт
+             окно жёстко, запаса в нём не было, и при уменьшении speed заливка
+             упиралась в конец окна. Привязка к пересечению заголовком вьюпорта
+             от высоты секции не зависит и такого потолка не имеет.
+             Разных схем окна в проекте больше нет — все пять точек считают
+             одинаково. Пина нет. */
           var tl = gsap.timeline({
             scrollTrigger: {
-              trigger: root,
-              start: '16% bottom',
-              end: '64% bottom',
-              scrub: 0.5
+              trigger: title,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true
             }
           });
 
-          tl.to(proxy, {
-            pos: total,
+          tl.to(driver, {
+            pos: maxPos,
             ease: 'none',
-            onUpdate: paint
+            onUpdate: retarget
           });
+
+          /* Твин упреждения плагину не принадлежит и сам при ре-сплите не
+             умрёт: он бы остался писать в отсоединённые узлы. Ссылка уезжает
+             наружу, гасится и при следующем сплите, и при выходе из ветки
+             matchMedia. */
+          chase = setRender.tween;
 
           ScrollTrigger.refresh();
           return tl;
@@ -8480,6 +8673,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
       });
 
       return function () {
+        if (chase) chase.kill();
         split.revert();
       };
     });
@@ -9039,9 +9233,10 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
   /* ── 3. Скролл-заливка лида ────────────────────────────────────────────────
      Единственная анимация секции. Механизм тот же, что у sw-achievements__lead и
-     sw-benefits__title: SplitText на символы, один прокси-таймлайн с onUpdate
-     переписывает --sw-catalog-fill у всех символов разом на каждом кадре,
-     пробелы занимают слот наравне с символами. Подробный разбор приёма —
+     sw-benefits__title: SplitText на символы, строка — отдельная дорожка со
+     своим стартом и своим ритмом, дорожки идут внахлёст, один прокси-таймлайн
+     с onUpdate переписывает --sw-catalog-fill у всех символов разом на каждом
+     кадре, пробелы занимают слот наравне с символами. Подробный разбор приёма —
      в комментарии у sw-benefits, здесь не повторяется.
      Библиотеки проверяются поимённо: нет любой из трёх — секция тихо ничего
      не делает, и лид остаётся в финальном цвете, потому что правило заливки
@@ -9055,6 +9250,33 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   if (!lead) return;
   if (!window.gsap || !window.ScrollTrigger || !window.SplitText) return;
 
+  /* Ритмы заливки — тот же набор, что у sw-benefits__title, разбор там.
+     Дублируется сознательно: общий хелпер стал бы третьим контрактом между
+     секциями (CLAUDE.md 6), а секция обязана переживать отсутствие соседей. */
+  var STAGGER = 1 / 3;
+  var BLEND = 0.6;
+
+  var easeInOut = gsap.parseEase('sine.inOut');
+  var easeOut = gsap.parseEase('sine.out');
+  var easeIn = gsap.parseEase('sine.in');
+
+  var rhythms = [
+    /* 1 — один разгон и торможение */
+    function (u) {
+      return easeInOut(u);
+    },
+    /* 2 — бодрый старт, вязнет к середине, дотягивает к концу */
+    function (u) {
+      var w = u < 0.5 ? 0.5 * easeOut(u * 2) : 0.5 + 0.5 * easeIn(u * 2 - 1);
+      return BLEND * w + (1 - BLEND) * u;
+    },
+    /* 3 — две волны */
+    function (u) {
+      var w = u < 0.5 ? 0.5 * easeInOut(u * 2) : 0.5 + 0.5 * easeInOut(u * 2 - 1);
+      return BLEND * w + (1 - BLEND) * u;
+    }
+  ];
+
   var initLeadFill = function () {
     gsap.matchMedia().add({
       isDesktop: '(min-width: 769px)',
@@ -9062,6 +9284,10 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
     }, function (ctx) {
       var cond = ctx.conditions;
       if (!cond.isDesktop || cond.reduceMotion) return;
+
+      /* Твин упреждения живёт вне таймлайна и плагину не подчиняется, поэтому
+         ссылка на него держится здесь: её гасят и ре-сплит, и выход из ветки. */
+      var chase = null;
 
       /* aria: 'none' — по умолчанию плагин вешает aria-hidden на сгенерированные
          узлы, и текст заголовка выпал бы из дерева доступности; на h2 это
@@ -9073,17 +9299,23 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
         autoSplit: true,
         aria: 'none',
         onSplit: function (self) {
-          var chars = self.chars;
-          var slots = [];
-          var slot = 0;
-          var ci = 0;
+          if (chase) chase.kill();
 
-          self.lines.forEach(function (line) {
+          var chars = self.chars;
+          var lines = [];
+          var ci = 0;
+          var start = 0;
+          var sum = 0;
+
+          self.lines.forEach(function (line, li) {
             var text = line.textContent;
             var from = 0;
             var to = text.length;
             while (from < to && /\s/.test(text.charAt(from))) from++;
             while (to > from && /\s/.test(text.charAt(to - 1))) to--;
+
+            var slots = [];
+            var slot = 0;
 
             for (var i = from; i < to; i++) {
               if (/\s/.test(text.charAt(i))) {
@@ -9092,40 +9324,90 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                 slots.push({ el: chars[ci++], at: slot++ });
               }
             }
+
+            lines.push({
+              slots: slots,
+              len: slot,
+              start: start,
+              rhythm: rhythms[li % rhythms.length]
+            });
+
+            start += STAGGER * slot;
+            sum += slot;
           });
 
-          var total = slot;
-          var proxy = { pos: 0 };
+          /* driver — позиция от скролла, render — та, что рисуется. Разбор
+             приёма у sw-benefits__title, здесь не повторяется. */
+          var driver = { pos: 0 };
+          var render = { pos: 0 };
 
           var paint = function () {
-            for (var i = 0; i < slots.length; i++) {
-              var v = proxy.pos - slots[i].at;
-              v = v < 0 ? 0 : (v > 1 ? 1 : v);
-              slots[i].el.style.setProperty('--sw-catalog-fill', (v * 100) + '%');
+            for (var li = 0; li < lines.length; li++) {
+              var ln = lines[li];
+              var u = ln.len ? (render.pos - ln.start) / ln.len : 1;
+              u = u < 0 ? 0 : (u > 1 ? 1 : u);
+              var edge = ln.rhythm(u) * ln.len;
+
+              for (var i = 0; i < ln.slots.length; i++) {
+                var v = edge - ln.slots[i].at;
+                v = v < 0 ? 0 : (v > 1 ? 1 : v);
+                ln.slots[i].el.style.setProperty('--sw-catalog-fill', (v * 100) + '%');
+              }
             }
           };
 
           paint();
 
+          /* Множитель 0,78 — общий для всех пяти точек заливки. Запас у него
+             почти выбран, разбор — у sw-benefits__title. */
+          var speed = 0.78;
+          var maxPos = sum * speed;
+
+          /* Упреждение на 12 слотов: столько заливка проходит сама после того,
+             как скролл встал. Разбор — у sw-benefits__title. */
+          var LEAD = 12;
+          var RAMP = 36;
+          var setRender = gsap.quickTo(render, 'pos', {
+            duration: 2.2,
+            ease: 'sine.out',
+            onUpdate: paint
+          });
+
+          var lastPos = 0;
+          var retarget = function () {
+            var dir = driver.pos >= lastPos ? 1 : -1;
+            lastPos = driver.pos;
+
+            var room = dir > 0 ? driver.pos : maxPos - driver.pos;
+            var ahead = LEAD * (room < RAMP ? room / RAMP : 1);
+            var target = driver.pos + ahead * dir;
+
+            if (target < 0) target = 0;
+            else if (target > maxPos) target = maxPos;
+
+            setRender(target);
+          };
+
           /* Триггер — сам лид, не секция целиком: под ним лежат фильтры и два
              десятка карточек, и проценты от высоты секции отработали бы задолго
              до того, как лид попал бы во вьюпорт. Та же поправка, что у sw-achievements.
-             Множитель скорости 1,7 — оттуда же: заголовок дозаливается примерно
-             на 59% окна и дальше стоит залитым. */
+             scrub: true — всё сглаживание живёт в твине упреждения выше. */
           var tl = gsap.timeline({
             scrollTrigger: {
               trigger: lead,
               start: 'top bottom',
               end: 'bottom top',
-              scrub: 0.5
+              scrub: true
             }
           });
 
-          tl.to(proxy, {
-            pos: total * 1.7,
+          tl.to(driver, {
+            pos: maxPos,
             ease: 'none',
-            onUpdate: paint
+            onUpdate: retarget
           });
+
+          chase = setRender.tween;
 
           ScrollTrigger.refresh();
           return tl;
@@ -9133,6 +9415,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
       });
 
       return function () {
+        if (chase) chase.kill();
         split.revert();
       };
     });
@@ -9169,15 +9452,47 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
   /* ── Скролл-заливка H2 ─────────────────────────────────────────────────────
      Механизм тот же, что у sw-benefits__title и sw-achievements__lead:
-     SplitText на символы, один прокси-таймлайн, onUpdate переписывает
+     SplitText на символы, строка — отдельная дорожка со своим стартом и своим
+     ритмом, дорожки идут внахлёст, один прокси-таймлайн, onUpdate переписывает
      --sw-about-fill у всех символов разом на каждом кадре, пробелы занимают
      слот наравне с символами. Подробный разбор приёма — в комментарии
      у sw-benefits, здесь не повторяется.
+     Строк здесь три, и третья («время и силы») вдвое короче второй, поэтому
+     дозаливается раньше неё: длительность дорожки пропорциональна длине
+     строки. Следствие принятое, а не дефект — см. разбор у sw-benefits.
      Граница — 769: на ней у секции ломается и композиция, и метрика страницы.
      На ≤768 и при reduced-motion сплита нет вовсе, и заголовок стоит в
      финальном цвете: правило заливки висит на классе сгенерированных символов,
      а без сплита их не существует. */
   var title = root.querySelector('.sw-about__title');
+
+  /* Ритмы заливки — тот же набор, что у sw-benefits__title, разбор там.
+     Дублируется сознательно: общий хелпер стал бы третьим контрактом между
+     секциями (CLAUDE.md 6), а секция обязана переживать отсутствие соседей.
+     gsap здесь уже проверен выше по блоку, parseEase звать безопасно. */
+  var STAGGER = 1 / 3;
+  var BLEND = 0.6;
+
+  var easeInOut = gsap.parseEase('sine.inOut');
+  var easeOut = gsap.parseEase('sine.out');
+  var easeIn = gsap.parseEase('sine.in');
+
+  var rhythms = [
+    /* 1 — один разгон и торможение */
+    function (u) {
+      return easeInOut(u);
+    },
+    /* 2 — бодрый старт, вязнет к середине, дотягивает к концу */
+    function (u) {
+      var w = u < 0.5 ? 0.5 * easeOut(u * 2) : 0.5 + 0.5 * easeIn(u * 2 - 1);
+      return BLEND * w + (1 - BLEND) * u;
+    },
+    /* 3 — две волны */
+    function (u) {
+      var w = u < 0.5 ? 0.5 * easeInOut(u * 2) : 0.5 + 0.5 * easeInOut(u * 2 - 1);
+      return BLEND * w + (1 - BLEND) * u;
+    }
+  ];
 
   var initTitleFill = function () {
     if (!title || !window.SplitText) return;
@@ -9187,6 +9502,10 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
     }, function (ctx) {
       var cond = ctx.conditions;
       if (!cond.isDesktop || cond.reduceMotion) return;
+
+      /* Твин упреждения живёт вне таймлайна и плагину не подчиняется, поэтому
+         ссылка на него держится здесь: её гасят и ре-сплит, и выход из ветки. */
+      var chase = null;
 
       /* type включает lines, хотя разбивку держат блочные span разметки:
          слоты размечаются по строкам, и без них порядок символов пришлось бы
@@ -9202,17 +9521,23 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
         autoSplit: true,
         aria: 'none',
         onSplit: function (self) {
-          var chars = self.chars;
-          var slots = [];
-          var slot = 0;
-          var ci = 0;
+          if (chase) chase.kill();
 
-          self.lines.forEach(function (line) {
+          var chars = self.chars;
+          var lines = [];
+          var ci = 0;
+          var start = 0;
+          var sum = 0;
+
+          self.lines.forEach(function (line, li) {
             var text = line.textContent;
             var from = 0;
             var to = text.length;
             while (from < to && /\s/.test(text.charAt(from))) from++;
             while (to > from && /\s/.test(text.charAt(to - 1))) to--;
+
+            var slots = [];
+            var slot = 0;
 
             for (var i = from; i < to; i++) {
               if (/\s/.test(text.charAt(i))) {
@@ -9221,44 +9546,93 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                 slots.push({ el: chars[ci++], at: slot++ });
               }
             }
+
+            lines.push({
+              slots: slots,
+              len: slot,
+              start: start,
+              rhythm: rhythms[li % rhythms.length]
+            });
+
+            start += STAGGER * slot;
+            sum += slot;
           });
 
-          var total = slot;
-          var proxy = { pos: 0 };
+          /* driver — позиция от скролла, render — та, что рисуется. Разбор
+             приёма у sw-benefits__title, здесь не повторяется. */
+          var driver = { pos: 0 };
+          var render = { pos: 0 };
 
           var paint = function () {
-            for (var i = 0; i < slots.length; i++) {
-              var v = proxy.pos - slots[i].at;
-              v = v < 0 ? 0 : (v > 1 ? 1 : v);
-              slots[i].el.style.setProperty('--sw-about-fill', (v * 100) + '%');
+            for (var li = 0; li < lines.length; li++) {
+              var ln = lines[li];
+              var u = ln.len ? (render.pos - ln.start) / ln.len : 1;
+              u = u < 0 ? 0 : (u > 1 ? 1 : u);
+              var edge = ln.rhythm(u) * ln.len;
+
+              for (var i = 0; i < ln.slots.length; i++) {
+                var v = edge - ln.slots[i].at;
+                v = v < 0 ? 0 : (v > 1 ? 1 : v);
+                ln.slots[i].el.style.setProperty('--sw-about-fill', (v * 100) + '%');
+              }
             }
           };
 
           paint();
 
+          /* Множитель 0,78 — общий для всех пяти точек заливки. Запас у него
+             почти выбран, разбор — у sw-benefits__title. Из пяти точек здесь самый
+             ранний финиш — первый кандидат на подгонку, если вживую окажется
+             рано. */
+          var speed = 0.78;
+          var maxPos = sum * speed;
+
+          /* Упреждение на 12 слотов: столько заливка проходит сама после того,
+             как скролл встал. Разбор — у sw-benefits__title. */
+          var LEAD = 12;
+          var RAMP = 36;
+          var setRender = gsap.quickTo(render, 'pos', {
+            duration: 2.2,
+            ease: 'sine.out',
+            onUpdate: paint
+          });
+
+          var lastPos = 0;
+          var retarget = function () {
+            var dir = driver.pos >= lastPos ? 1 : -1;
+            lastPos = driver.pos;
+
+            var room = dir > 0 ? driver.pos : maxPos - driver.pos;
+            var ahead = LEAD * (room < RAMP ? room / RAMP : 1);
+            var target = driver.pos + ahead * dir;
+
+            if (target < 0) target = 0;
+            else if (target > maxPos) target = maxPos;
+
+            setRender(target);
+          };
+
           /* Триггер — сам заголовок, не секция целиком. Ниже H2 лежит ряд
              карточек, и секция ощутимо выше заголовка: проценты от всей секции
              начинали бы заливку до того, как H2 вообще становится виден.
-             Тот же случай и то же решение, что у sw-achievements__lead. */
+             Тот же случай и то же решение, что у sw-achievements__lead.
+             scrub: true — всё сглаживание живёт в твине упреждения выше. */
           var tl = gsap.timeline({
             scrollTrigger: {
               trigger: title,
               start: 'top bottom',
               end: 'bottom top',
-              scrub: 0.5
+              scrub: true
             }
           });
 
-          /* Скорость 1,7 от базовой — как у sw-achievements: за то же окно
-             скролла прокси проходит на 70% больше слотов, заголовок
-             дозаливается примерно на 59% окна и дальше стоит залитым. */
-          var speed = 1.7;
-
-          tl.to(proxy, {
-            pos: total * speed,
+          tl.to(driver, {
+            pos: maxPos,
             ease: 'none',
-            onUpdate: paint
+            onUpdate: retarget
           });
+
+          chase = setRender.tween;
 
           ScrollTrigger.refresh();
           return tl;
@@ -9266,6 +9640,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
       });
 
       return function () {
+        if (chase) chase.kill();
         split.revert();
       };
     });
@@ -9376,11 +9751,29 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   var root = document.querySelector('.sw-achievements');
   if (!root) return;
 
+  /* Анимация в секции одна: заливка лид-параграфа по скроллу. Объём движения
+     на экран остаётся в рамках VIS-5 с запасом — заливка живёт только на ≥769,
+     на компакте секция статична.
+     Прогон счётчиков статистик отсюда снят по решению пользователя: числа
+     стоят в разметке финальными и никем не переписываются.
+     Общая проверка — gsap и ScrollTrigger; SplitText нужен единственно
+     заливке, и его проверка стоит внутри её блока, а не здесь — так же,
+     как у sw-about.
+     registerPlugin не вызывается: он один раз в блоке инициализации выше. */
+  if (!window.gsap || !window.ScrollTrigger) return;
+
   /* ── Скролл-заливка лид-параграфа ──────────────────────────────────────────
      Тот же механизм, что у sw-benefits__title (SEC-3): SplitText на символы,
-     один прокси-таймлайн с onUpdate переписывает --sw-achievements-fill у всех
-     символов разом на каждом кадре, пробелы занимают слот наравне с символами.
-     Подробный разбор приёма — в комментарии у sw-benefits, здесь не повторяется.
+     строка — отдельная дорожка со своим стартом и своим ритмом, дорожки идут
+     внахлёст, один прокси-таймлайн с onUpdate переписывает --sw-achievements-fill
+     у всех символов разом на каждом кадре, пробелы занимают слот наравне
+     с символами. Подробный разбор приёма — в комментарии у sw-benefits, здесь
+     не повторяется.
+     ЧИСЛО СТРОК ЗДЕСЬ ПЛАВАЕТ ОТ ШИРИНЫ ЭКРАНА — параграф переносится сам,
+     фиксированной разбивки span у него нет. Ритм привязан к индексу строки,
+     поэтому на ресайзе кривые перераспределяются. Дефектом это не является:
+     autoSplit и так пересоздаёт сплит, таймлайн и разметку дорожек при каждом
+     пересчёте строк. Ритм — свойство позиции строки, а не её текста.
      Граница своя: у sw-achievements композиция и метрика страницы ломаются на 768/769
      (а не на 1024/1025, как у sw-benefits), поэтому isDesktop проверяет 769.
      На ≤768 и при reduced-motion сплита нет вовсе — параграф стоит в финальном
@@ -9390,16 +9783,49 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   /* Только полная копия ≥769: короткая мобильная версия в анимации не участвует
      и на ≤768 в разметке даже не совпала бы с гейтом isDesktop ниже. */
   var lead = root.querySelector('.sw-achievements__lead--full');
-  if (!lead) return;
-  if (!window.gsap || !window.ScrollTrigger || !window.SplitText) return;
+
+  /* Ритмы заливки — тот же набор, что у sw-benefits__title, разбор там.
+     Дублируется сознательно: общий хелпер стал бы третьим контрактом между
+     секциями (CLAUDE.md 6), а секция обязана переживать отсутствие соседей. */
+  var STAGGER = 1 / 3;
+  var BLEND = 0.6;
+
+  var easeInOut = gsap.parseEase('sine.inOut');
+  var easeOut = gsap.parseEase('sine.out');
+  var easeIn = gsap.parseEase('sine.in');
+
+  var rhythms = [
+    /* 1 — один разгон и торможение */
+    function (u) {
+      return easeInOut(u);
+    },
+    /* 2 — бодрый старт, вязнет к середине, дотягивает к концу */
+    function (u) {
+      var w = u < 0.5 ? 0.5 * easeOut(u * 2) : 0.5 + 0.5 * easeIn(u * 2 - 1);
+      return BLEND * w + (1 - BLEND) * u;
+    },
+    /* 3 — две волны */
+    function (u) {
+      var w = u < 0.5 ? 0.5 * easeInOut(u * 2) : 0.5 + 0.5 * easeInOut(u * 2 - 1);
+      return BLEND * w + (1 - BLEND) * u;
+    }
+  ];
 
   var initLeadFill = function () {
+    /* Гейты стоят здесь, а не в начале секции: нет параграфа или нет
+       SplitText — молчит заливка, остальная секция живёт как обычно. */
+    if (!lead || !window.SplitText) return;
+
     gsap.matchMedia().add({
       isDesktop: '(min-width: 769px)',
       reduceMotion: '(prefers-reduced-motion: reduce)'
     }, function (ctx) {
       var cond = ctx.conditions;
       if (!cond.isDesktop || cond.reduceMotion) return;
+
+      /* Твин упреждения живёт вне таймлайна и плагину не подчиняется, поэтому
+         ссылка на него держится здесь: её гасят и ре-сплит, и выход из ветки. */
+      var chase = null;
 
       /* aria: 'none' — по умолчанию плагин вешает aria-hidden на сгенерированные
          узлы, и текст параграфа выпал бы из дерева доступности. */
@@ -9410,17 +9836,23 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
         autoSplit: true,
         aria: 'none',
         onSplit: function (self) {
-          var chars = self.chars;
-          var slots = [];
-          var slot = 0;
-          var ci = 0;
+          if (chase) chase.kill();
 
-          self.lines.forEach(function (line) {
+          var chars = self.chars;
+          var lines = [];
+          var ci = 0;
+          var start = 0;
+          var sum = 0;
+
+          self.lines.forEach(function (line, li) {
             var text = line.textContent;
             var from = 0;
             var to = text.length;
             while (from < to && /\s/.test(text.charAt(from))) from++;
             while (to > from && /\s/.test(text.charAt(to - 1))) to--;
+
+            var slots = [];
+            var slot = 0;
 
             for (var i = from; i < to; i++) {
               if (/\s/.test(text.charAt(i))) {
@@ -9429,50 +9861,100 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                 slots.push({ el: chars[ci++], at: slot++ });
               }
             }
+
+            lines.push({
+              slots: slots,
+              len: slot,
+              start: start,
+              rhythm: rhythms[li % rhythms.length]
+            });
+
+            start += STAGGER * slot;
+            sum += slot;
           });
 
-          var total = slot;
-          var proxy = { pos: 0 };
+          /* driver — позиция от скролла, render — та, что рисуется. Разбор
+             приёма у sw-benefits__title, здесь не повторяется. */
+          var driver = { pos: 0 };
+          var render = { pos: 0 };
 
           var paint = function () {
-            for (var i = 0; i < slots.length; i++) {
-              var v = proxy.pos - slots[i].at;
-              v = v < 0 ? 0 : (v > 1 ? 1 : v);
-              slots[i].el.style.setProperty('--sw-achievements-fill', (v * 100) + '%');
+            for (var li = 0; li < lines.length; li++) {
+              var ln = lines[li];
+              var u = ln.len ? (render.pos - ln.start) / ln.len : 1;
+              u = u < 0 ? 0 : (u > 1 ? 1 : u);
+              var edge = ln.rhythm(u) * ln.len;
+
+              for (var i = 0; i < ln.slots.length; i++) {
+                var v = edge - ln.slots[i].at;
+                v = v < 0 ? 0 : (v > 1 ? 1 : v);
+                ln.slots[i].el.style.setProperty('--sw-achievements-fill', (v * 100) + '%');
+              }
             }
           };
 
           paint();
 
-          /* Триггер — сам параграф, не секция целиком. У sw-benefits H2 стоит
-             вплотную к верху панели, и процент высоты секции примерно совпадает
-             с тем, когда H2 идёт через вьюпорт. У sw-achievements ниже лида ещё лежит
-             строка статистик — секция ощутимо выше самого параграфа, и те же
-             проценты «16% / 64% bottom» от ВСЕЙ секции начинали заливку до того,
-             как параграф вообще становился виден, и заканчивали её почти сразу
-             после. top bottom → bottom top отвязывает окно от высоты секции:
-             заливка идёт ровно то время, что параграф пересекает вьюпорт. */
+          /* Множитель 0,78 — общий для всех пяти точек заливки. Запас у него
+             почти выбран, разбор — у sw-benefits__title. Скорость задана множителем,
+             а не длиной окна: start/end привязаны к пересечению параграфом
+             вьюпорта и смысл «пока параграф виден» сохраняют. */
+          var speed = 0.78;
+          var maxPos = sum * speed;
+
+          /* Упреждение на 12 слотов: столько заливка проходит сама после того,
+             как скролл встал. Разбор — у sw-benefits__title.
+             Строк здесь шесть, и на коротких экранах их бывает больше — LEAD
+             всё равно берётся абсолютным, в слотах, а не долей текста: клиент
+             видит его как «дописалось ещё десяток символов», и эта величина
+             от длины параграфа зависеть не должна. */
+          var LEAD = 12;
+          var RAMP = 36;
+          var setRender = gsap.quickTo(render, 'pos', {
+            duration: 2.2,
+            ease: 'sine.out',
+            onUpdate: paint
+          });
+
+          var lastPos = 0;
+          var retarget = function () {
+            var dir = driver.pos >= lastPos ? 1 : -1;
+            lastPos = driver.pos;
+
+            var room = dir > 0 ? driver.pos : maxPos - driver.pos;
+            var ahead = LEAD * (room < RAMP ? room / RAMP : 1);
+            var target = driver.pos + ahead * dir;
+
+            if (target < 0) target = 0;
+            else if (target > maxPos) target = maxPos;
+
+            setRender(target);
+          };
+
+          /* Триггер — сам параграф, не секция целиком: ниже лида лежит строка
+             статистик, и секция ощутимо выше самого параграфа. Проценты от
+             ВСЕЙ секции начинали бы заливку до того, как параграф вообще
+             становится виден. top bottom → bottom top отвязывает окно от высоты
+             секции: заливка идёт ровно то время, что параграф пересекает
+             вьюпорт. Схема общая для всех пяти точек заливки — привязок к
+             проценту высоты секции в проекте не осталось.
+             scrub: true — всё сглаживание живёт в твине упреждения выше. */
           var tl = gsap.timeline({
             scrollTrigger: {
               trigger: lead,
               start: 'top bottom',
               end: 'bottom top',
-              scrub: 0.5
+              scrub: true
             }
           });
 
-          /* Скорость заливки — 1,7 от базовой: за то же окно скролла прокси
-             проходит на 70% больше слотов, и параграф дозаливается примерно на
-             59% окна, дальше стоит залитым. Ускорение задано множителем, а не
-             укорочением окна: start/end привязаны к пересечению параграфом
-             вьюпорта и смысл «пока параграф виден» сохраняют. */
-          var speed = 1.7;
-
-          tl.to(proxy, {
-            pos: total * speed,
+          tl.to(driver, {
+            pos: maxPos,
             ease: 'none',
-            onUpdate: paint
+            onUpdate: retarget
           });
+
+          chase = setRender.tween;
 
           ScrollTrigger.refresh();
           return tl;
@@ -9480,6 +9962,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
       });
 
       return function () {
+        if (chase) chase.kill();
         split.revert();
       };
     });
@@ -9523,16 +10006,45 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
   /* ── 1. Скролл-заливка H2 ──────────────────────────────────────────────────
      Механизм тот же, что у sw-benefits__title и sw-about__title: SplitText на
-     символы, один прокси-таймлайн, onUpdate переписывает --sw-steps-fill
-     у всех символов разом на каждом кадре, пробелы занимают слот наравне
-     с символами. Подробный разбор приёма — в комментарии у sw-benefits,
-     здесь не повторяется.
+     символы, строка — отдельная дорожка со своим стартом и своим ритмом,
+     дорожки идут внахлёст, один прокси-таймлайн, onUpdate переписывает
+     --sw-steps-fill у всех символов разом на каждом кадре, пробелы занимают
+     слот наравне с символами. Подробный разбор приёма — в комментарии
+     у sw-benefits, здесь не повторяется.
      Граница — 769, единственная в секции: ниже неё композиция шапки секции
      ломается и заголовок встаёт на всю ширину панели. Новой границы это
      не заводит (design_system 2.7).
      На ≤768 и при reduced-motion сплита нет вовсе, и заголовок стоит
      в финальном цвете: правило заливки висит на классе сгенерированных
      символов, а без сплита их не существует. */
+  /* Ритмы заливки — тот же набор, что у sw-benefits__title, разбор там.
+     Дублируется сознательно: общий хелпер стал бы третьим контрактом между
+     секциями (CLAUDE.md 6), а секция обязана переживать отсутствие соседей.
+     gsap здесь уже проверен выше по блоку, parseEase звать безопасно. */
+  var STAGGER = 1 / 3;
+  var BLEND = 0.6;
+
+  var easeInOut = gsap.parseEase('sine.inOut');
+  var easeOut = gsap.parseEase('sine.out');
+  var easeIn = gsap.parseEase('sine.in');
+
+  var rhythms = [
+    /* 1 — один разгон и торможение */
+    function (u) {
+      return easeInOut(u);
+    },
+    /* 2 — бодрый старт, вязнет к середине, дотягивает к концу */
+    function (u) {
+      var w = u < 0.5 ? 0.5 * easeOut(u * 2) : 0.5 + 0.5 * easeIn(u * 2 - 1);
+      return BLEND * w + (1 - BLEND) * u;
+    },
+    /* 3 — две волны */
+    function (u) {
+      var w = u < 0.5 ? 0.5 * easeInOut(u * 2) : 0.5 + 0.5 * easeInOut(u * 2 - 1);
+      return BLEND * w + (1 - BLEND) * u;
+    }
+  ];
+
   var initTitleFill = function () {
     if (!title || !window.SplitText) return;
     gsap.matchMedia().add({
@@ -9541,6 +10053,10 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
     }, function (ctx) {
       var cond = ctx.conditions;
       if (!cond.isDesktop || cond.reduceMotion) return;
+
+      /* Твин упреждения живёт вне таймлайна и плагину не подчиняется, поэтому
+         ссылка на него держится здесь: её гасят и ре-сплит, и выход из ветки. */
+      var chase = null;
 
       /* type включает lines, хотя разбивку держат блочные span разметки:
          слоты размечаются по строкам, и без них порядок символов пришлось бы
@@ -9556,21 +10072,29 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
         autoSplit: true,
         aria: 'none',
         onSplit: function (self) {
-          var chars = self.chars;
-          var slots = [];
-          var slot = 0;
-          var ci = 0;
+          if (chase) chase.kill();
 
-          /* Разметка слотов. Идём по тексту каждой строки: непробельный символ
+          var chars = self.chars;
+          var lines = [];
+          var ci = 0;
+          var start = 0;
+          var sum = 0;
+
+          /* Разметка дорожек. Идём по тексту каждой строки: непробельный символ
              забирает очередной узел из self.chars, пробел узла не имеет, но
              слот всё равно тратит. Пробельные символы по краям строки
-             пропускаются — это отступы разметки, а не текст. */
-          self.lines.forEach(function (line) {
+             пропускаются — это отступы разметки, а не текст.
+             Слоты нумеруются от нуля в каждой строке; общая ось задаётся полем
+             start, которое накапливает треть длины каждой пройденной строки. */
+          self.lines.forEach(function (line, li) {
             var text = line.textContent;
             var from = 0;
             var to = text.length;
             while (from < to && /\s/.test(text.charAt(from))) from++;
             while (to > from && /\s/.test(text.charAt(to - 1))) to--;
+
+            var slots = [];
+            var slot = 0;
 
             for (var i = from; i < to; i++) {
               if (/\s/.test(text.charAt(i))) {
@@ -9579,44 +10103,92 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
                 slots.push({ el: chars[ci++], at: slot++ });
               }
             }
+
+            lines.push({
+              slots: slots,
+              len: slot,
+              start: start,
+              rhythm: rhythms[li % rhythms.length]
+            });
+
+            start += STAGGER * slot;
+            sum += slot;
           });
 
-          var total = slot;
-          var proxy = { pos: 0 };
+          /* driver — позиция от скролла, render — та, что рисуется. Разбор
+             приёма у sw-benefits__title, здесь не повторяется. */
+          var driver = { pos: 0 };
+          var render = { pos: 0 };
 
           var paint = function () {
-            for (var i = 0; i < slots.length; i++) {
-              var v = proxy.pos - slots[i].at;
-              v = v < 0 ? 0 : (v > 1 ? 1 : v);
-              slots[i].el.style.setProperty('--sw-steps-fill', (v * 100) + '%');
+            for (var li = 0; li < lines.length; li++) {
+              var ln = lines[li];
+              var u = ln.len ? (render.pos - ln.start) / ln.len : 1;
+              u = u < 0 ? 0 : (u > 1 ? 1 : u);
+              var edge = ln.rhythm(u) * ln.len;
+
+              for (var i = 0; i < ln.slots.length; i++) {
+                var v = edge - ln.slots[i].at;
+                v = v < 0 ? 0 : (v > 1 ? 1 : v);
+                ln.slots[i].el.style.setProperty('--sw-steps-fill', (v * 100) + '%');
+              }
             }
           };
 
           paint();
 
+          /* Множитель 0,78 — общий для всех пяти точек заливки. Запас у него
+             почти выбран, разбор — у sw-benefits__title. Из пяти точек здесь самый
+             поздний финиш: вторая строка заметно длиннее первой. */
+          var speed = 0.78;
+          var maxPos = sum * speed;
+
+          /* Упреждение на 12 слотов: столько заливка проходит сама после того,
+             как скролл встал. Разбор — у sw-benefits__title. */
+          var LEAD = 12;
+          var RAMP = 36;
+          var setRender = gsap.quickTo(render, 'pos', {
+            duration: 2.2,
+            ease: 'sine.out',
+            onUpdate: paint
+          });
+
+          var lastPos = 0;
+          var retarget = function () {
+            var dir = driver.pos >= lastPos ? 1 : -1;
+            lastPos = driver.pos;
+
+            var room = dir > 0 ? driver.pos : maxPos - driver.pos;
+            var ahead = LEAD * (room < RAMP ? room / RAMP : 1);
+            var target = driver.pos + ahead * dir;
+
+            if (target < 0) target = 0;
+            else if (target > maxPos) target = maxPos;
+
+            setRender(target);
+          };
+
           /* Триггер — сам заголовок, не секция целиком. Ниже H2 лежит список
              из пяти шагов, и секция кратно выше заголовка: проценты от всей
              секции начинали бы заливку до того, как H2 вообще становится виден.
-             Тот же случай и то же решение, что у sw-about__title. */
+             Тот же случай и то же решение, что у sw-about__title.
+             scrub: true — всё сглаживание живёт в твине упреждения выше. */
           var tl = gsap.timeline({
             scrollTrigger: {
               trigger: title,
               start: 'top bottom',
               end: 'bottom top',
-              scrub: 0.5
+              scrub: true
             }
           });
 
-          /* Скорость 1,7 от базовой — как у sw-about и sw-achievements: за то же
-             окно скролла прокси проходит на 70% больше слотов, заголовок
-             дозаливается примерно на 59% окна и дальше стоит залитым. */
-          var speed = 1.7;
-
-          tl.to(proxy, {
-            pos: total * speed,
+          tl.to(driver, {
+            pos: maxPos,
             ease: 'none',
-            onUpdate: paint
+            onUpdate: retarget
           });
+
+          chase = setRender.tween;
 
           ScrollTrigger.refresh();
           return tl;
@@ -9624,6 +10196,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
       });
 
       return function () {
+        if (chase) chase.kill();
         split.revert();
       };
     });
