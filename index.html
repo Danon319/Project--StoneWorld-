@@ -8067,6 +8067,758 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 </footer>
 <!-- ═══════ T123 · СЕКЦИЯ: Footer (SEC-10) — конец ═══════ -->
 
+<!-- ═══════ T123 · СЕКЦИЯ: Mobile_menu (SEC-14) — начало ═══════ -->
+<style>
+/* стиль — секция Mobile_menu */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   РАЗБОР СЕКЦИИ
+
+   Секцией страницы не является: это модальный слой поверх неё. Из потока
+   документа выключен, места в порядке секций не занимает, поэтому стоит
+   последним блоком зоны B — он ничего собой не подпирает.
+
+   ДИАПАЗОН ЖИЗНИ — ДО 1024 ВКЛЮЧИТЕЛЬНО, А НЕ ДО 768. Бургер в шапке живёт
+   до 1024 (SEC-2, блок «бургер»): на 769–1024 состав «меню + пилюля из
+   четырёх плашек» в панель не помещался и съедал логотип. Отсюда два
+   следствия, оба обязательны: меню покрывает 320–1024 и несёт ВСЕ ЧЕТЫРЕ
+   канала связи — ниже 1025 их на странице больше нигде нет. Телефон стоит
+   номером, остальные три — плашками (уточнение 2).
+
+   ПОТОЛКИ КЛАМПОВ СЧИТАНЫ НА 1024, А НЕ НА 2560. Причина не в удобстве:
+   выше 1024 слой display: none и не рендерится, а кнопка, которая его
+   открывает, там из шапки убрана. Потолок на 2560 задавал бы величину для
+   ширины, на которой элемента не существует.
+
+   ГРАНИЦ У СЕКЦИИ ДВЕ, И ОБЕ УЖЕ В РЕЕСТРЕ (design_system 2.7):
+   425/426 — композиционная: группы ссылок встают в две колонки (кадр 768)
+             и складываются в стопку (кадр 425). Это ЕДИНСТВЕННОЕ
+             перестроение секции. Границу проект не заводит — на ней уже
+             перестраивается собранный Footer;
+   768/769 — только размер плашки канала, закон футера дословно. Композицию
+             не трогает. Разрыва величины на ней нет ни у одного элемента:
+             ветки стыкуются точно, 56px = 56px;
+   1025    — жёсткое погашение слоя, страховка от осечки скрипта.
+
+   КОЭФФИЦИЕНТЫ ВЫВЕДЕНЫ ПО КАДРУ 425 (ширина съёмки подтверждена
+   пользователем) и проверены по кадру 768. Кадры 2560 / 1440 / 1024 / 320
+   не снимались — на трёх верхних секции не существует вовсе, а структуру
+   на 320 задаёт уточнение 1. Доля вьюпорта действует по всему диапазону,
+   заморозки ниже 769 нет (design_system 2.9 правило 4).
+
+   ИЗВЕСТНОЕ РАСХОЖДЕНИЕ КАДРОВ — боковой отступ панели. На 425 он читается
+   как 6,5% ширины, на 768 заметно у́же. Величины не сходятся, поэтому
+   коэффициент НЕ усредняется (design_system 2.9): взят кадр с подтверждённой
+   шириной. Проверяется замером в браузере, правится одним числом.
+
+   ВЕРТИКАЛЬ — НЕ РАСПОРКАМИ. Правило 2.9 №3 формально подходит (высота задана
+   вьюпортом), но писалось под Hero, где контент обязан заполнить экран.
+   Здесь кадр 768 показывает блок по центру свободной высоты, а кадр 425 —
+   прижатый к верху. Оба даёт одно margin-block: auto на .sw-menu__body:
+   при избытке высоты блок центрируется, при нехватке прижимается к верху
+   и не обрезается — чего justify-content: center в скроллящемся контейнере
+   не гарантирует.
+
+   КЕГЛЬ НОМЕРА С КАДРА ВЫШЕ ВЕРХНЕЙ СТУПЕНИ ШКАЛЫ (11,7% ширины против 8,3%
+   у --sw-fs-9 на той же ширине). Обойти нечем: ступень — потолок (2.2),
+   а собственные клампы кегля секциям запрещены (design_system 11). Номер
+   садится на --sw-fs-9 и выходит мельче референсного примерно на треть.
+   Решение пользователя, ответ 4.
+
+   КОМПОЗИЦИЯ КОЛОНОК ОТ РЕФЕРЕНСА ОТЛИЧАЕТСЯ СОЗНАТЕЛЬНО. На кадре 768
+   колонки неравные: слева пять длинных пунктов, справа три коротких. У нас
+   наоборот — слева три коротких, справа четыре и длинных. Копировать
+   геометрию кадра под другой контент бессмысленно, поэтому колонки равные
+   (repeat(2, minmax(0, 1fr))) — идиома собранного футера.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* box-sizing — посекционно, первой строкой. Потомковый * внутри контейнера
+   за пределы секции не выходит и DOM Тильды не трогает (design_system 5). */
+.sw-menu,
+.sw-menu *,
+.sw-menu *::before,
+.sw-menu *::after { box-sizing: border-box; }
+
+/* Контейнер слоя. display: none в покое снимает слой и из таб-порядка, и из
+   дерева доступности одним свойством — aria-hidden поэтому не ставится
+   (тот же аргумент, что у двух копий кнопки Hero, design_system 6.7).
+
+   scroll-margin-top здесь — НОСИТЕЛЬ ЗНАЧЕНИЯ, а не якорь: слой целью
+   перехода не бывает. Поведение секции читает из него компенсацию высоты
+   шапки, как это делают SEC-5, SEC-6, SEC-9 и SEC-10. Приём тот же,
+   назначение другое: секция не обращается ни к DOM шапки, ни к её размерам,
+   и контракт с GlobalHeader остаётся в объёме одного имени атрибута
+   (PRD 10.3). Формула — высота панели плюс её нижний зазор, design_system 7
+   дословно. */
+.sw-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--sw-z-overlay, 900);
+  display: none;
+  font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  color: var(--sw-color-text, #242424);
+  scroll-margin-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+}
+
+/* Два класса, а не один: --open переводит слой в поток, --visible запускает
+   переходы. Разделение обязательно — переход с display: none не стартует,
+   и без отдельного кадра между ними панель появлялась бы рывком. */
+.sw-menu--open { display: block; }
+
+/* ─── затемнение ─── */
+/* Ловит клик закрытия. При полноэкранной панели (ответ 2) видно только на
+   время входа и выхода — это и есть его работа. */
+.sw-menu__backdrop {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(36, 36, 36, 0.45);
+  opacity: 0;
+  transition: opacity var(--sw-dur-base, 250ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-menu--visible .sw-menu__backdrop {
+  opacity: 1;
+  transition-duration: var(--sw-dur-slow, 400ms);
+  transition-timing-function: var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+/* ─── панель ─── */
+/* Скруглений нет: панель во всю ширину и высоту вьюпорта (ответ 2), скруглять
+   нечего. Правило «панель секции скруглена на все четыре угла»
+   (design_system 7) на полноэкранный слой не распространяется — тот же
+   случай, что у панели GlobalHeader, прижатой к кромке.
+
+   Собственный скролл обязателен: на 1024×640 (планшет в альбомной) контент
+   в высоту не помещается, а слой перекрывает страницу и её скролл заблокирован.
+
+   Вход длиннее выхода: --sw-dur-slow против --sw-dur-base, то есть 400 против
+   250ms — выход 62% входа (design_system 2.6). Базовое правило описывает
+   ВЫХОД, --visible переопределяет длительность и кривую на вход.
+   Анимируются только transform и opacity. */
+.sw-menu__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: clamp(21px, 6.54vw, 67px);
+  background: var(--sw-color-bg-section, #FFFFFF);
+  transform: translateX(100%);
+  transition: transform var(--sw-dur-base, 250ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-menu--visible .sw-menu__panel {
+  transform: translateX(0);
+  transition-duration: var(--sw-dur-slow, 400ms);
+  transition-timing-function: var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+/* ─── строка крестика ─── */
+/* Прижата к верху панели и к правому её краю — единственный элемент секции,
+   выровненный не по левому краю. */
+.sw-menu__head {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Плашка кнопки повторяет бургер шапки дословно: тёмный квадрат 44×44 со
+   скруглением 12px (решение пользователя, правка 5). Бургер открывает, крестик
+   закрывает — они стоят в одной точке экрана и обязаны читаться парой, поэтому
+   размер фиксированный, а не клампится: у бургера он тоже 44×44 на всём
+   диапазоне. Радиус литеральный и в шкалу 2.4 не входит — то же исключение,
+   что у бургера (design_system 9), второго не заводится.
+   Кнопка отстоит от верхней и от правой кромки на одну и ту же величину:
+   padding панели одинаков со всех сторон. */
+.sw-menu__close {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: var(--sw-color-cta, #242424);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  transition: background-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* Глиф 20px — вторая ступень иконочных размеров design_system 9 (20 / 24),
+   опущен с 24 решением пользователя. Плашка при этом осталась 44×44: ниже
+   опускать её нельзя, это тач-минимум PRD 14 и одновременно размер бургера,
+   с которым кнопка обязана читаться парой. Цена — глиф стал мельче линий
+   бургера (20 против 25 в той же плашке), пара по плотности чуть разошлась.
+   Цвет зашит в файл, currentColor к нему неприменим, поэтому смена цвета —
+   подменой файла: оба глифа лежат в разметке и переключаются прозрачностью.
+   По событию не подгружаются, иначе первое наведение даст пустой кадр —
+   идиома плашек каналов связи.
+   В покое белый Close_FFFFFF на тёмной плашке, на наведении тёмный
+   Close_242424 на светлой: инверсия ровно как у бургера.
+   Оба файла получены; в реестре design_system 9 строка «Закрытие (×)»
+   до сих пор помечена «Нужна» — долг документации, правится отдельным
+   проходом. */
+.sw-menu__close-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  transition: opacity var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-menu__close-icon--active { opacity: 0; }
+
+/* ─── блок контента ─── */
+/* margin-block: auto — вся вертикальная композиция секции. Разбор в шапке
+   блока. flex: 0 0 auto обязателен: растягивающийся блок съел бы авто-поля,
+   и центрирование не сработало бы. */
+.sw-menu__body {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  row-gap: clamp(49px, 15.20vw, 156px);
+  margin-block: auto;
+}
+
+/* ─── группы ссылок ─── */
+/* Две колонки. На ≤425 схлопываются в одну — блок 425px ниже.
+   row-gap задан на случай стопки и равен зазору между группами в body:
+   на ≤425 «Услуги → Информация» и «Информация → Контакты» обязаны идти
+   одним шагом, иначе стопка распадается на неравные куски. */
+.sw-menu__nav-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(16px, 5.00vw, 51px);
+  row-gap: clamp(49px, 15.20vw, 156px);
+}
+
+/* min-width: 0 снимает автоминимум грид-трека: без него длинная подпись
+   вроде «Преимущества покрытия» раздвинула бы колонку вместо переноса. */
+.sw-menu__group { min-width: 0; }
+
+/* Заголовочным тегом не является и уровня не пропускает: H1 занята Hero,
+   H2 — заголовок секции, а модальный слой секцией не является. Подпись
+   группы — <p>, как sw-footer__nav-title. Доступное имя группы несёт
+   aria-label её <nav> (CLAUDE.md 7, PRD SEO-2).
+   СТУПЕНЬ ПОДНЯТА С --sw-fs-1 НА --sw-fs-2 (решение пользователя, правка 3).
+   Побочный выигрыш: страховка max(12px, …) стала не нужна — --sw-fs-2 на 320
+   даёт 13px и порога читаемости не пробивает, тогда как --sw-fs-1 давал 11px.
+   Кегль совпал с подписью колонки футера, это та же роль. */
+.sw-menu__group-title,
+.sw-menu__contacts-title {
+  margin: 0;
+  padding: 0;
+  color: var(--sw-color-text-muted, #8F8F8F);
+  font-size: var(--sw-fs-2, 28px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-2, 1.29);
+}
+
+/* Зазор «подпись → список» вдвое меньше выведенного с кадра (решение
+   пользователя, правка 2). Коэффициент 5,71vw поделён пополам целиком,
+   вместе с полом и потолком: делить долю, оставив пол прежним, значило бы
+   получить на узких ширинах прежний зазор. */
+.sw-menu__group-title { margin-block-end: clamp(9px, 2.855vw, 29px); }
+
+/* Сброса стилей в проекте нет: list-style, margin и padding снимаются явно,
+   своим классом (design_system 5). */
+/* row-gap вдвое меньше выведенного с кадра (решение пользователя, правка 1).
+   Пол и потолок поделены вместе с долей — по той же причине, что у зазора
+   «подпись → список» выше. Тач-разделение пунктов держит не зазор, а высота
+   строки: --sw-fs-6 × --sw-lh-6 даёт 25px на 320 и 35px на 768. */
+.sw-menu__list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  row-gap: clamp(4px, 1.285vw, 13px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sw-menu__item {
+  margin: 0;
+  padding: 0;
+}
+
+/* Перенос разрешён и обрезка запрещена: подпись, не влезшую в свою колонку,
+   нужно переносить, а не резать. На двух строках ролл не запускается —
+   поведение секции отключает его поштучно, и такая ссылка остаётся
+   на смене цвета через transition ниже (идиома футера). */
+.sw-menu__link {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  color: var(--sw-color-text, #242424);
+  font-size: var(--sw-fs-6, 56px);
+  font-weight: var(--sw-fw-regular, 400);
+  line-height: var(--sw-lh-6, 1.14);
+  text-decoration: none;
+  transition: color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.sw-menu__link-text { display: block; }
+
+.sw-menu__link-text--alt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--sw-color-link-hover, #A68A73);
+  transform: translateY(100%);
+}
+
+/* Классы сгенерированных SplitText узлов. Имена задаются явно через
+   charsClass с префиксом секции — дефолтные имена плагина не под нашим
+   контролем (design_system 8). */
+.sw-menu__link-char,
+.sw-menu__phone-char { display: inline-block; }
+
+/* ─── группа контактов ─── */
+/* container-type нужен номеру: его кегль ограничен долей контейнера, и без
+   контекста cqi считался бы от ближайшего вышестоящего — то есть ни от чего
+   предсказуемого. Приём собранного футера. */
+.sw-menu__contacts {
+  container-type: inline-size;
+}
+
+/* Тоже вдвое: «Связаться с нами» — такая же подпись группы, и шаг под ней
+   обязан совпадать с шагом под «Услугами» и «Информацией» по характеру,
+   иначе третья группа выпадет из ритма (правка 2). */
+.sw-menu__contacts-title { margin-block-end: clamp(7px, 2.18vw, 23px); }
+
+/* Ступень --sw-fs-9 — верх шкалы, разбор в шапке блока.
+   Потолок 11.7cqi СТРАХОВКА, а не рабочая величина: строка
+   «+7 964 938 73 92» занимает 8,11em (замер футера на загруженном Inter,
+   худший случай — на мелком кегле строка шире, ось opsz включена), и
+   11.7cqi отдаёт ей 95% ширины контейнера. При полноэкранной панели
+   ступень ниже потолка на всех ширинах и он не срабатывает; он держит
+   два других случая — Inter ещё не подменил фолбэк-стек и панель однажды
+   получила max-width. */
+.sw-menu__phone {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  color: var(--sw-color-text, #242424);
+  font-size: min(11.7cqi, var(--sw-fs-9, 29px));
+  font-weight: var(--sw-fw-medium, 500);
+  line-height: var(--sw-lh-9, 1.05);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.sw-menu__phone-text { display: block; }
+
+.sw-menu__phone-text--alt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--sw-color-link-hover, #A68A73);
+  transform: translateY(100%);
+}
+
+/* ─── плашки каналов связи ─── */
+/* Три канала: MAX, VK, почта. Телефона среди плашек нет — он стоит номером
+   выше, ровно как в футере.
+   Общей пилюли нет, фон покоя серый --sw-color-bg-page (уточнение 1
+   к секции). Глиф и заливки — закон футера дословно.
+
+   РАЗМЕР В 1,33 РАЗА БОЛЬШЕ ФУТЕРНОГО. Пришли к нему в два шага решениями
+   пользователя: сперва футерный закон удвоили, затем поделили на 1,5.
+   Делилось всё целиком — доля, пол и потолок, — поэтому пропорция
+   выдержана точно и промежуточных величин в коде не осталось.
+
+   Ветки по 768 стыкуются точно: ≤768 упирается в потолок 75, ≥769 стоит
+   на полу 75. Разрыва величины на границе нет, как и у глифа (37 = 37).
+   Выше 769 плашка держится на полу до 1406px — 5,333vw обгоняет 75px только
+   там, то есть на всём живом диапазоне секции размер постоянный.
+
+   Пол ≤768 равен 56px — это ровно футерный пол на ≥769, и тач-минимум 44px
+   он перекрывает с запасом. На 320 ряд занимает 184px из 278 доступных,
+   места вдоволь.
+
+   ЗАЗОР МЕЖДУ ПЛАШКАМИ НЕ МАСШТАБИРОВАЛСЯ ВОВСЕ — обе правки названы только
+   про сами каналы. После уменьшения ряд стал разрежённее: зазор составляет
+   14,3% диаметра против 9,6% на прошлом размере и 19% в футере. */
+.sw-menu__socials {
+  display: flex;
+  align-items: center;
+  column-gap: clamp(8px, 1.40vw, 36px);
+  margin: clamp(16px, 5.00vw, 51px) 0 0;
+}
+
+.sw-menu__plate {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: clamp(75px, 5.333vw, 136px);
+  height: clamp(75px, 5.333vw, 136px);
+  overflow: hidden;
+  background: var(--sw-color-bg-page, #F4F5F5);
+  border-radius: 50%;
+  text-decoration: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.sw-menu__plate::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* Mesh MAX: база плюс три радиальных слоя от углов. Затухание — rgba() того же
+   цвета с alpha 0, не ключевым словом transparent: иначе на стыках серый ореол.
+   Якоря подтянуты внутрь на 15%: плашка круглая, углы квадрата обрезаны.
+   Значения повторяют GlobalHeader и Footer дословно — это один и тот же знак. */
+.sw-menu__plate--max::before {
+  background-color: var(--sw-color-max-base, #7333E7);
+  background-image:
+    radial-gradient(circle at 15% 85%, var(--sw-color-max-bl, #44CCFF) 0%, rgba(68, 204, 255, 0) 62%),
+    radial-gradient(circle at 15% 15%, var(--sw-color-max-tl, #274EBD) 0%, rgba(39, 78, 189, 0) 60%),
+    radial-gradient(circle at 85% 15%, var(--sw-color-max-tr, #9933DD) 0%, rgba(153, 51, 221, 0) 64%);
+}
+
+.sw-menu__plate--vk::before {
+  background: var(--sw-color-vk, #0077FE);
+}
+
+.sw-menu__plate--mail::before {
+  background: var(--sw-color-mail, #FFC550);
+}
+
+/* Оба глифа лежат в разметке и переключаются прозрачностью: по событию не
+   подгружаются, иначе первое наведение даст пустой кадр. */
+.sw-menu__plate-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(37px, 2.667vw, 68px);
+  height: clamp(37px, 2.667vw, 68px);
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  transition: opacity var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-menu__plate-icon--active { opacity: 0; }
+
+/* ─── фокус ─── */
+/* Общая обводка на всех интерактивных элементах секции. Смещение 3px уводит
+   кольцо на белую панель; overflow: hidden у ссылок его не режет — outline
+   рисуется вне бокса и обрезке потомков не подчиняется. */
+.sw-menu__close:focus-visible,
+.sw-menu__link:focus-visible,
+.sw-menu__phone:focus-visible,
+.sw-menu__plate:focus-visible {
+  outline: 2px solid var(--sw-color-focus, #242424);
+  outline-offset: 3px;
+}
+
+/* ─── hover ─── */
+/* Только под (hover: hover): на тач-устройстве состояние иначе залипает.
+   Смена цвета — запасной путь, а не второй механизм поверх ролла: работает
+   там, где ролла нет (библиотека не догрузилась, prefers-reduced-motion,
+   ширина ниже 769, ссылка встала в две строки). Класс --rolled ставит
+   поведение секции ровно на те ссылки, которые ролл получил, и снимает
+   с них смену цвета — иначе верхняя копия тонировалась бы на выезде. */
+@media (hover: hover) {
+  /* Инверсия плашки ровно как у бургера: тёмная становится светлой, белый
+     глиф — тёмным. */
+  .sw-menu__close:hover { background: var(--sw-color-bg-page, #F4F5F5); }
+  .sw-menu__close:hover .sw-menu__close-icon { opacity: 0; }
+  .sw-menu__close:hover .sw-menu__close-icon--active { opacity: 1; }
+
+  .sw-menu__link:not(.sw-menu__link--rolled):hover,
+  .sw-menu__phone:not(.sw-menu__phone--rolled):hover {
+    color: var(--sw-color-link-hover, #A68A73);
+  }
+
+  .sw-menu__plate:hover::before { opacity: 1; }
+  .sw-menu__plate:hover .sw-menu__plate-icon { opacity: 0; }
+  .sw-menu__plate:hover .sw-menu__plate-icon--active { opacity: 1; }
+}
+
+/* ─── active ─── */
+/* Без условия (hover: hover): смена состояния несёт смысл, на телефоне
+   нажатие обязано давать отклик (design_system 8). На iOS Safari :active
+   не срабатывает без слушателя касания на самом элементе — он вешается
+   в поведении секции. */
+.sw-menu__link:not(.sw-menu__link--rolled):active,
+.sw-menu__phone:not(.sw-menu__phone--rolled):active {
+  color: var(--sw-color-link-hover, #A68A73);
+}
+
+.sw-menu__plate:active::before { opacity: 1; }
+.sw-menu__plate:active .sw-menu__plate-icon { opacity: 0; }
+.sw-menu__plate:active .sw-menu__plate-icon--active { opacity: 1; }
+
+/* ─── 768px и ниже: размер плашки ─── */
+/* Композицию не трогает — перестроение у секции одно и оно на 425.
+   Ниже 768 плашки не уменьшаются продлением десктопной пропорции: она увела
+   бы их ниже 44px именно на телефонах, где тач-таргет и нужен
+   (design_system 9). Закон футера дословно, ветки стыкуются в 56px. */
+@media (max-width: 768px) {
+  .sw-menu {
+    scroll-margin-top: 80px;
+  }
+
+  .sw-menu__plate {
+    width: clamp(56px, 9.72vw, 75px);
+    height: clamp(56px, 9.72vw, 75px);
+  }
+
+  .sw-menu__plate-icon {
+    width: clamp(28px, 4.86vw, 37px);
+    height: clamp(28px, 4.86vw, 37px);
+  }
+}
+
+/* ─── 425px и ниже: композиция ─── */
+/* Единственное перестроение секции. Колонки складываются в стопку — так
+   на кадре 425. Родителя ни один элемент не меняет, второй копии разметки
+   не требуется: меняется одно свойство сетки.
+   Границу проект не заводит — 425 уже в реестре 2.7, и на ней уже
+   перестраивается собранный Footer. */
+@media (max-width: 425px) {
+  .sw-menu__nav-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ─── 1025px и выше: слой погашен ─── */
+/* Страховка, а не композиция: выше 1024 бургера в шапке нет, открывать слой
+   нечем. Селектор двойной (0,2,0) специально — он обязан перебивать
+   .sw-menu--open независимо от порядка правил в таблице. */
+@media (min-width: 1025px) {
+  .sw-menu,
+  .sw-menu.sw-menu--open { display: none; }
+}
+
+/* ─── prefers-reduced-motion ─── */
+/* Слой появляется мгновенно и сразу читаем. transform снимается вместе
+   с переходом: иначе панель осталась бы уехавшей за правый край.
+   Ролл в этом режиме не запускается вовсе — условие стоит в matchMedia
+   поведения секции. */
+@media (prefers-reduced-motion: reduce) {
+  .sw-menu__backdrop,
+  .sw-menu__panel,
+  .sw-menu__close-icon,
+  .sw-menu__link,
+  .sw-menu__phone,
+  .sw-menu__plate::before,
+  .sw-menu__plate-icon { transition: none; }
+
+  .sw-menu__panel { transform: none; }
+}
+</style>
+<!-- разметка — секция Mobile_menu -->
+<!-- Слой поверх страницы. role="dialog" + aria-modal сообщают скринридеру,
+     что содержимое за пределами панели на время открытия недоступно;
+     фактическое замыкание фокуса делает поведение секции.
+     Кнопки-открывашки здесь нет: она живёт в GlobalHeader и отдаётся
+     контрактом через атрибут data-sw-menu-trigger (PRD 10.3). Меню само
+     находит её по имени атрибута и переживает её отсутствие.
+     Каналы связи стоят здесь третьей точкой по BIZ-2 — после GlobalHeader
+     и Footer, но ниже 1025 первой из них на странице нет. Секции независимы,
+     общего состояния между ними нет, разметка продублирована сознательно.
+     Совпадать обязаны только имена целей аналитики: разойдутся — вместо
+     одного счётчика будет три частичных (PRD 11, условие 3). Имена
+     не назначены, поэтому вызовов reachGoal нет — стоят маркеры. -->
+<div class="sw-menu" role="dialog" aria-modal="true" aria-label="Меню навигации по странице">
+
+  <div class="sw-menu__backdrop" data-sw-menu-close></div>
+
+  <div class="sw-menu__panel">
+
+    <div class="sw-menu__head">
+      <!-- Бургер в крестик не превращается — закрытие отдельным элементом
+           (design_system 9). Плашка кнопки при этом повторяет бургер: тёмный
+           квадрат 44×44, радиус 12px.
+           Два глифа: белый виден в покое, тёмный приходит на наведении.
+           Оба лежат в разметке и переключаются прозрачностью — по событию
+           не подгружаются, иначе первое наведение даст пустой кадр.
+           alt пустой у обоих: доступное имя несёт aria-label кнопки, иначе
+           объявится дважды.
+           loading="lazy" стоит: слой в покое не рендерится, к первому экрану
+           не относится (NFR-4). -->
+      <button class="sw-menu__close" type="button" data-sw-menu-close
+              aria-label="Закрыть меню">
+        <img class="sw-menu__close-icon"
+             src="https://static.tildacdn.com/tild6261-3964-4231-b832-323162363931/Close_FFFFFF.svg"
+             alt="" loading="lazy">
+        <img class="sw-menu__close-icon sw-menu__close-icon--active"
+             src="https://static.tildacdn.com/tild6133-6664-4064-b561-303633656332/Close_242424.svg"
+             alt="" loading="lazy">
+      </button>
+    </div>
+
+    <div class="sw-menu__body">
+
+      <!-- Две группы ссылок. Состав и подписи заданы пользователем (ответ 3)
+           и повторяют колонки футера «Услуги» и «Информация»; шапочный состав
+           они НЕ повторяют — там четыре пункта и подпись «Реализация».
+           Расхождение сознательное, комментарий в SEC-2 им отменён.
+           Подписи групп — <p>, а не заголовочные теги: разбор в стилях.
+           Все семь якорей существуют на странице; переход перехватывает
+           поведение секции ради компенсации высоты шапки.
+           Две копии текста на пункт — верхняя видна в покое, нижняя приходит
+           снизу при наведении (text-roll). Обе aria-hidden, доступное имя
+           ссылки задано явно: при сплите содержимое переписывается. -->
+      <div class="sw-menu__nav-group">
+
+        <nav class="sw-menu__group" aria-label="Услуги">
+          <p class="sw-menu__group-title">Услуги</p>
+          <ul class="sw-menu__list">
+            <li class="sw-menu__item">
+              <a class="sw-menu__link" href="#sw-hero" aria-label="Главная">
+                <span class="sw-menu__link-text" aria-hidden="true">Главная</span>
+                <span class="sw-menu__link-text sw-menu__link-text--alt" aria-hidden="true">Главная</span>
+              </a>
+            </li>
+            <li class="sw-menu__item">
+              <a class="sw-menu__link" href="#sw-portfolio" aria-label="Портфолио">
+                <span class="sw-menu__link-text" aria-hidden="true">Портфолио</span>
+                <span class="sw-menu__link-text sw-menu__link-text--alt" aria-hidden="true">Портфолио</span>
+              </a>
+            </li>
+            <li class="sw-menu__item">
+              <a class="sw-menu__link" href="#sw-catalog" aria-label="Каталог">
+                <span class="sw-menu__link-text" aria-hidden="true">Каталог</span>
+                <span class="sw-menu__link-text sw-menu__link-text--alt" aria-hidden="true">Каталог</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <nav class="sw-menu__group" aria-label="Информация">
+          <p class="sw-menu__group-title">Информация</p>
+          <ul class="sw-menu__list">
+            <li class="sw-menu__item">
+              <a class="sw-menu__link" href="#sw-benefits" aria-label="Преимущества покрытия">
+                <span class="sw-menu__link-text" aria-hidden="true">Преимущества покрытия</span>
+                <span class="sw-menu__link-text sw-menu__link-text--alt" aria-hidden="true">Преимущества покрытия</span>
+              </a>
+            </li>
+            <li class="sw-menu__item">
+              <a class="sw-menu__link" href="#sw-achievements" aria-label="Наши достижения">
+                <span class="sw-menu__link-text" aria-hidden="true">Наши достижения</span>
+                <span class="sw-menu__link-text sw-menu__link-text--alt" aria-hidden="true">Наши достижения</span>
+              </a>
+            </li>
+            <li class="sw-menu__item">
+              <a class="sw-menu__link" href="#sw-about" aria-label="О нас">
+                <span class="sw-menu__link-text" aria-hidden="true">О нас</span>
+                <span class="sw-menu__link-text sw-menu__link-text--alt" aria-hidden="true">О нас</span>
+              </a>
+            </li>
+            <li class="sw-menu__item">
+              <a class="sw-menu__link" href="#sw-steps" aria-label="Этапы реализации">
+                <span class="sw-menu__link-text" aria-hidden="true">Этапы реализации</span>
+                <span class="sw-menu__link-text sw-menu__link-text--alt" aria-hidden="true">Этапы реализации</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+      </div>
+
+      <!-- Каналы связи. Ниже 1025 это ЕДИНСТВЕННАЯ их точка выше футера:
+           из шапки все четыре убраны. Телефон — номером, остальные три —
+           плашками (уточнение 2).
+           Номер набирает на всех ширинах. target и rel не ставятся: tel:
+           и mailto: новую вкладку не открывают, схему обрабатывает
+           приложение связи. Доступное имя задано явно и содержит видимую
+           строку — WCAG 2.5.3 «Label in Name». -->
+      <div class="sw-menu__contacts">
+        <p class="sw-menu__contacts-title">Связаться с нами</p>
+
+        <!-- ANL: имя цели не назначено -->
+        <a class="sw-menu__phone" href="tel:+79649387392"
+           aria-label="Позвонить по номеру +7 964 938 73 92">
+          <span class="sw-menu__phone-text" aria-hidden="true">+7 964 938 73 92</span>
+          <span class="sw-menu__phone-text sw-menu__phone-text--alt" aria-hidden="true">+7 964 938 73 92</span>
+        </a>
+
+        <div class="sw-menu__socials">
+
+          <!-- ANL: имя цели не назначено -->
+          <a class="sw-menu__plate sw-menu__plate--max"
+             href="https://max.ru/join/Dssb1Agm0wct4o-rTod9jFze2If3DDvlooDwi95e550"
+             target="_blank" rel="noopener noreferrer" aria-label="Написать в MAX">
+            <img class="sw-menu__plate-icon"
+                 src="https://static.tildacdn.com/tild3132-3362-4738-b264-316533313838/max_logo_dark.svg"
+                 alt="" loading="lazy">
+            <img class="sw-menu__plate-icon sw-menu__plate-icon--active"
+                 src="https://static.tildacdn.com/tild6465-6263-4965-b232-373639656339/max_logo_white.svg"
+                 alt="" loading="lazy">
+          </a>
+
+          <!-- ANL: имя цели не назначено -->
+          <a class="sw-menu__plate sw-menu__plate--vk" href="https://vk.ru/id1118207836"
+             target="_blank" rel="noopener noreferrer" aria-label="Открыть страницу VK">
+            <img class="sw-menu__plate-icon"
+                 src="https://static.tildacdn.com/tild3565-6435-4861-b362-343736333331/vk_logo_dark.svg"
+                 alt="" loading="lazy">
+            <img class="sw-menu__plate-icon sw-menu__plate-icon--active"
+                 src="https://static.tildacdn.com/tild3631-3161-4166-a136-633330356331/vk_logo_white.svg"
+                 alt="" loading="lazy">
+          </a>
+
+          <!-- ANL: имя цели не назначено -->
+          <a class="sw-menu__plate sw-menu__plate--mail" href="mailto:Thestoneworld@yandex.ru"
+             aria-label="Написать на почту Thestoneworld@yandex.ru">
+            <img class="sw-menu__plate-icon"
+                 src="https://static.tildacdn.com/tild3265-3331-4433-a434-343438356363/Yandex-mail_dark.svg"
+                 alt="" loading="lazy">
+            <img class="sw-menu__plate-icon sw-menu__plate-icon--active"
+                 src="https://static.tildacdn.com/tild3539-3136-4834-b538-336536333761/Yandex-mail_white.svg"
+                 alt="" loading="lazy">
+          </a>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- ═══════ T123 · СЕКЦИЯ: Mobile_menu (SEC-14) — конец ═══════ -->
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      ЗОНА B — СЕКЦИИ — конец
      ═══════════════════════════════════════════════════════════════════════════ -->
@@ -11037,6 +11789,374 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
     } else {
       initTextRoll();
     }
+  }
+
+})();
+</script>
+
+<!-- ═══════ T123 · ПОВЕДЕНИЕ: Mobile_menu (SEC-14) ═══════ -->
+<script>
+/* поведение — секция Mobile_menu */
+(function () {
+
+  var menu = document.querySelector('.sw-menu');
+  if (!menu) return;
+
+  var panel = menu.querySelector('.sw-menu__panel');
+  var closeBtn = menu.querySelector('.sw-menu__close');
+
+  /* Контракт 2 (PRD 10.3). Предмет контракта — РОВНО ОДНО имя атрибута.
+     Меню само находит кнопку и вешает слушатель; шапка о меню не знает
+     ничего. Кнопки на странице нет — секция тихо ничего не делает
+     и остаётся невидимой: открывать её нечем. */
+  var trigger = document.querySelector('[data-sw-menu-trigger]');
+  if (!trigger) return;
+
+  var reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var deskMQ = window.matchMedia('(min-width: 1025px)');
+
+  var isOpen = false;
+  var hideTimer = null;
+
+  /* ── 1. Блокировка скролла страницы ───────────────────────────────────────
+     ЕДИНСТВЕННОЕ разрешённое обращение за пределы секции — к корню документа,
+     и только из JS (PRD 10.3). Прежние значения сохраняются перед блокировкой
+     и восстанавливаются при закрытии: слепое обнуление затёрло бы чужие
+     настройки, если Тильда или другой блок трогают тот же элемент.
+     Правил по body в CSS секции нет и быть не может (CLAUDE.md 3).
+     Ширина полосы прокрутки компенсируется padding-right: без неё содержимое
+     страницы под слоем дёргается вправо на ширину исчезнувшей полосы. На тач
+     полоса нулевая, компенсация выходит нулевой сама. */
+  var docEl = document.documentElement;
+  var savedOverflow = null;
+  var savedPaddingRight = null;
+
+  var lockScroll = function () {
+    if (savedOverflow !== null) return;
+    var gap = window.innerWidth - docEl.clientWidth;
+    savedOverflow = docEl.style.overflow;
+    savedPaddingRight = docEl.style.paddingRight;
+    docEl.style.overflow = 'hidden';
+    if (gap > 0) {
+      var base = parseFloat(window.getComputedStyle(docEl).paddingRight) || 0;
+      docEl.style.paddingRight = (base + gap) + 'px';
+    }
+  };
+
+  var unlockScroll = function () {
+    if (savedOverflow === null) return;
+    docEl.style.overflow = savedOverflow;
+    docEl.style.paddingRight = savedPaddingRight;
+    savedOverflow = null;
+    savedPaddingRight = null;
+  };
+
+  /* ── 2. Открытие и закрытие ───────────────────────────────────────────────
+     Два класса, а не один: --open переводит слой в поток (display), --visible
+     запускает переходы. Между ними нужен отдельный кадр — переход, начатый
+     в том же кадре, что и смена display, браузер не запускает вовсе.
+     На закрытии обратный порядок: сначала снимается --visible, и только
+     после выхода (--sw-dur-base, 250ms) снимается --open. Таймер, а не
+     transitionend: событие не приходит, если переход погашен
+     prefers-reduced-motion, и слой завис бы открытым.
+     Блокировка скролла снимается СРАЗУ, не по таймеру: клик по пункту
+     закрывает меню и тут же прокручивает страницу, а прокрутка по
+     заблокированному корню не сработает. */
+  var EXIT_MS = 250;
+
+  var open = function () {
+    if (isOpen || deskMQ.matches) return;
+    isOpen = true;
+
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+
+    lockScroll();
+
+    menu.classList.add('sw-menu--open');
+    trigger.setAttribute('aria-expanded', 'true');
+
+    /* Двойной rAF: первый кадр применяет display, второй — переходы.
+       Проверка isOpen в колбэке обязательна и не декоративна: меню могли
+       закрыть раньше, чем кадр отрисовался — программно, клавишей или
+       кликом по пункту. Без неё запоздавший rAF вернул бы --visible уже
+       после close(), класс остался бы висеть на погашенном слое, и
+       следующее открытие прошло бы без выезда панели. */
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(function () {
+        if (isOpen) menu.classList.add('sw-menu--visible');
+      });
+    });
+
+    if (closeBtn) closeBtn.focus();
+    playEntrance();
+    armTextRoll();
+  };
+
+  var close = function (returnFocus) {
+    if (!isOpen) return;
+    isOpen = false;
+
+    menu.classList.remove('sw-menu--visible');
+    trigger.setAttribute('aria-expanded', 'false');
+    unlockScroll();
+
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () {
+      menu.classList.remove('sw-menu--open');
+      hideTimer = null;
+    }, reduceMQ.matches ? 0 : EXIT_MS);
+
+    /* Возврат фокуса — на бургер, и всегда именно на него, а не на то, что
+       было в фокусе до открытия. Меню открывается только этой кнопкой, она же
+       остаётся на экране после закрытия, и для диалога это верная точка
+       возврата. Запоминать прежний activeElement нельзя: если открытие
+       пришло с указателя, там окажется <body>, и фокус ушёл бы в никуда —
+       клавиатурный клиент потерял бы место.
+       Не возвращается при переходе по якорю: прыжок на бургер после прокрутки
+       к секции сбил бы клиенту место чтения. */
+    if (returnFocus !== false) trigger.focus();
+  };
+
+  trigger.addEventListener('click', function () {
+    if (isOpen) close();
+    else open();
+  });
+
+  /* Крестик и затемнение — одно имя атрибута на обе точки. */
+  var closers = menu.querySelectorAll('[data-sw-menu-close]');
+  Array.prototype.forEach.call(closers, function (node) {
+    node.addEventListener('click', function () { close(); });
+  });
+
+  /* Уход ширины выше 1024: бургера в шапке там нет, закрывать меню станет
+     нечем. Закрытие без возврата фокуса — кнопки, на которую возвращать,
+     на этой ширине уже не существует.
+     addListener — запасной путь для Safari до 14: там addEventListener
+     на MediaQueryList ещё не работал. */
+  var onDesk = function () { if (deskMQ.matches) close(false); };
+  if (deskMQ.addEventListener) deskMQ.addEventListener('change', onDesk);
+  else if (deskMQ.addListener) deskMQ.addListener(onDesk);
+
+  /* ── 3. Клавиатура: Esc и замыкание фокуса ────────────────────────────────
+     Слушатель на самом слое: пока меню открыто, фокус внутри него, и события
+     всплывают сюда. Документ не трогаем — это было бы глобальным слушателем
+     там, где хватает локального.
+     Список фокусируемых узлов пересчитывается на каждый Tab, а не кэшируется:
+     состав меняется вместе с шириной (на ≤425 колонки складываются) и вместе
+     с ре-сплитом SplitText. */
+  var FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  menu.addEventListener('keydown', function (event) {
+    var key = event.key;
+
+    if (key === 'Escape' || key === 'Esc') {
+      event.preventDefault();
+      close();
+      return;
+    }
+
+    if (key !== 'Tab') return;
+
+    var nodes = panel ? panel.querySelectorAll(FOCUSABLE) : [];
+    if (!nodes.length) return;
+
+    var first = nodes[0];
+    var last = nodes[nodes.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+
+  /* ── 4. Якоря: закрытие и плавный переход с компенсацией шапки ────────────
+     Своя прокрутка нужна не ради плавности, а ради компенсации: без неё
+     заголовок секции уехал бы под фиксированную панель GlobalHeader.
+     Величина читается из СОБСТВЕННОГО scroll-margin-top секции — тот же
+     приём, что у SEC-5, SEC-6, SEC-9 и SEC-10: секция не обращается ни к DOM
+     чужого блока, ни к его классам, ни к его размерам.
+     scroll-behavior задавался бы по корню документа, а это глобальное правило
+     и в перенесённом коде оно запрещено.
+     Узла-цели на странице нет — обработчик выходит ДО preventDefault, ссылка
+     ведёт себя как обычный якорь в пустоту, меню при этом всё равно
+     закрывается: клиент нажал пункт и ждёт, что слой уйдёт.
+     Селектор ловит только href="#…": tel: и mailto: сюда не попадают. */
+  var scrollToY = function (y) {
+    var top = y < 0 ? 0 : y;
+    try {
+      window.scrollTo({ top: top, behavior: reduceMQ.matches ? 'auto' : 'smooth' });
+    } catch (e) {
+      window.scrollTo(0, top);
+    }
+  };
+
+  var anchors = menu.querySelectorAll('a[href^="#"]');
+
+  Array.prototype.forEach.call(anchors, function (anchor) {
+    anchor.addEventListener('click', function (event) {
+      var id = (anchor.getAttribute('href') || '').slice(1);
+      var target = id ? document.getElementById(id) : null;
+
+      if (!target) { close(false); return; }
+
+      var compensation = parseFloat(window.getComputedStyle(menu).scrollMarginTop) || 0;
+      var top = target.getBoundingClientRect().top
+              + (window.pageYOffset || 0)
+              - compensation;
+
+      event.preventDefault();
+      close(false);
+      scrollToY(top);
+    });
+  });
+
+  /* ── 5. Активное состояние на тач-устройствах ─────────────────────────────
+     На iOS Safari :active не срабатывает без слушателя касания на самом
+     элементе. Обработчики пустые: состояние рисует CSS. */
+  var touchables = menu.querySelectorAll('.sw-menu__plate, .sw-menu__link, .sw-menu__phone');
+  Array.prototype.forEach.call(touchables, function (node) {
+    node.addEventListener('touchstart', function () {}, { passive: true });
+  });
+
+  /* ── 6. Появление групп ───────────────────────────────────────────────────
+     Вторая и последняя анимация секции — первая, выезд панели с затемнением,
+     живёт в CSS. Две на экран, потолок VIS-5 соблюдён.
+     Почему панель на CSS, а группы на GSAP: открытие меню обязано работать
+     при недогруженной библиотеке, а ступенчатое появление — украшение,
+     и его отсутствие ничего не ломает.
+     clearProps снимает инлайновые стили после проигрывания: иначе следующее
+     открытие началось бы с застрявших значений.
+     Ветки matchMedia здесь нет намеренно: разводить объём анимаций по
+     ширине (VIS-7) нечего — секция сама живёт только на ≤1024. */
+  var stageNodes = [
+    menu.querySelector('.sw-menu__nav-group'),
+    menu.querySelector('.sw-menu__contacts')
+  ].filter(Boolean);
+
+  function playEntrance() {
+    if (!window.gsap || reduceMQ.matches || !stageNodes.length) return;
+    gsap.fromTo(stageNodes,
+      { y: 24, opacity: 0 },
+      {
+        y: 0, opacity: 1,
+        duration: 0.5, ease: 'power3.out',
+        stagger: 0.08, delay: 0.12,
+        clearProps: 'all'
+      }
+    );
+  }
+
+  /* ── 7. Пункты и номер: text-roll ─────────────────────────────────────────
+     Механика GlobalHeader и Footer без изменений: две копии текста, обе
+     разбиваются на символы, обе едут вверх на строку, волна слева направо.
+     Библиотек нет — секция тихо ничего не делает, ссылки остаются обычными
+     и получают смену цвета на hover из CSS. registerPlugin здесь
+     не вызывается: он один раз в блоке инициализации вверху зоны.
+     Слушатели — на самом <a>: при ре-сплите сгенерированные узлы
+     пересоздаются и обработчики на них умирают (PRD ANL-5). Это же место
+     станет точкой reachGoal, когда имена целей назначат.
+     ГРАНИЦА 769, А НЕ 1025. У шапки сплит начинается с 1025, потому что ниже
+     меню в панели нет вовсе; здесь секция живёт как раз ниже, и ролл работает
+     в её верхней полосе 769–1024 при наличии мыши. Ниже 769 указателя с hover
+     нет, и ролл там не нужен.
+     РОЛЛ РАБОТАЕТ ТОЛЬКО НА ОДНОСТРОЧНОЙ ССЫЛКЕ. Нижняя копия смещена на 100%
+     высоты элемента; на двух строках это две строки вместо одной, и копия
+     приедет не на своё место. «Преимущества покрытия» в узкой колонке
+     переносится — такая ссылка ролла не получает, класс --rolled ей
+     не ставится, и CSS-hover остаётся за ней.
+
+     СПЛИТ ЗАПУСКАЕТСЯ НА ПЕРВОМ ОТКРЫТИИ, А НЕ НА document.fonts.ready, КАК
+     В ШАПКЕ И ФУТЕРЕ. Причина в проверке переноса: она меряет фактическую
+     высоту строки, а погашенный display: none слой отдаёт ноль. Ноль меньше
+     полутора интерлиньяжей, проверка проходит, и «Преимущества покрытия»
+     получает ролл, хотя в узкой колонке стоит в две строки — замер это
+     подтвердил. Шапка и футер такой проблемы не имеют: они на странице
+     всегда отрисованы. */
+  var rollNodes = menu.querySelectorAll('.sw-menu__link, .sw-menu__phone');
+  var rollArmed = false;
+
+  function armTextRoll() {
+    if (rollArmed) return;
+    if (!rollNodes.length || !window.gsap || !window.SplitText) return;
+
+    var run = function () {
+      /* Слой мог успеть закрыться, пока грузился шрифт. Мерить снова нечего —
+         выходим, не взводя флаг: следующее открытие попробует ещё раз. */
+      if (rollArmed || !menu.classList.contains('sw-menu--open')) return;
+      rollArmed = true;
+      initTextRoll();
+    };
+
+    /* Сплит после готовности шрифта: при font-display: swap символы,
+       посчитанные на фолбэк-шрифте, разъедутся в момент подмены на Inter.
+       Проверка переноса по высоте строки — по той же причине: на фолбэк-стеке
+       она у́же Inter, и ссылка, которая с Inter переносится, на замере
+       до подмены выглядела бы однострочной. */
+    if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+      document.fonts.ready.then(run);
+    } else {
+      run();
+    }
+  }
+
+  function initTextRoll() {
+      gsap.matchMedia().add(
+        '(hover: hover) and (min-width: 769px) and (prefers-reduced-motion: no-preference)',
+        function () {
+          var teardown = [];
+
+          Array.prototype.forEach.call(rollNodes, function (link) {
+            var isPhone = link.classList.contains('sw-menu__phone');
+            var textClass = isPhone ? 'sw-menu__phone-text' : 'sw-menu__link-text';
+            var charsClass = isPhone ? 'sw-menu__phone-char' : 'sw-menu__link-char';
+            var rolledClass = isPhone ? 'sw-menu__phone--rolled' : 'sw-menu__link--rolled';
+
+            var base = link.querySelector('.' + textClass + ':not(.' + textClass + '--alt)');
+            var alt = link.querySelector('.' + textClass + '--alt');
+            if (!base || !alt) return;
+
+            var lineHeight = parseFloat(window.getComputedStyle(base).lineHeight) || 0;
+            if (lineHeight && base.getBoundingClientRect().height > lineHeight * 1.5) return;
+
+            /* aria задаётся явно: элемент интерактивный, доступное имя ссылки
+               уже стоит в aria-label и подменять его плагину нельзя
+               (WCAG 2.5.3, design_system 8). */
+            var splitBase = SplitText.create(base, {
+              type: 'chars', charsClass: charsClass, aria: 'none'
+            });
+            var splitAlt = SplitText.create(alt, {
+              type: 'chars', charsClass: charsClass, aria: 'none'
+            });
+
+            var roll = gsap.timeline({ paused: true })
+              .to(splitBase.chars, { yPercent: -100, duration: 0.4, ease: 'power3.inOut', stagger: 0.03 }, 0)
+              .to(splitAlt.chars, { yPercent: -100, duration: 0.4, ease: 'power3.inOut', stagger: 0.03 }, 0);
+
+            var play = function () { roll.play(); };
+            var back = function () { roll.reverse(); };
+
+            link.classList.add(rolledClass);
+            link.addEventListener('mouseenter', play);
+            link.addEventListener('mouseleave', back);
+
+            teardown.push(function () {
+              link.removeEventListener('mouseenter', play);
+              link.removeEventListener('mouseleave', back);
+              link.classList.remove(rolledClass);
+              roll.kill();
+              splitBase.revert();
+              splitAlt.revert();
+            });
+          });
+
+          return function () {
+            teardown.forEach(function (undo) { undo(); });
+          };
+        }
+      );
   }
 
 })();
