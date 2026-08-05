@@ -67,6 +67,7 @@
   --sw-color-border-strong: #C5C5C5;
   --sw-color-text: #242424;
   --sw-color-text-muted: #8F8F8F;
+  --sw-color-text-prefill: #D3D3D3;
   --sw-color-text-on-cta: #FFFFFF;
   /* Метка и иконка на тёмной пилюле. Введён брифом SEC-3 (п.0); в таблице
      design_system 2.1 его пока нет — вносится отдельным проходом. */
@@ -120,16 +121,27 @@
      Нижние якоря новых ступеней не выдуманы: доли логарифмического интервала
      между fs-4 и fs-7 взяты из потолков 42 и 56 (0,23 и 0,59 интервала) и
      применены на остальных четырёх якорях. Иначе на 320, где весь провал
-     составляет 15 → 21, две ступени слиплись бы с соседями. */
-  --sw-fs-1: 11px;
-  --sw-fs-2: 13px;
-  --sw-fs-3: 14px;
-  --sw-fs-4: 15px;
-  --sw-fs-5: 16px;
-  --sw-fs-6: 18px;
-  --sw-fs-7: 21px;
-  --sw-fs-8: 24px;
-  --sw-fs-9: 29px;
+     составляет 15 → 21, две ступени слиплись бы с соседями.
+
+     ЯКОРЯ 320 И 425 ПОДНЯТЫ ПРАВКОЙ МОБИЛЬНОЙ АДАПТАЦИИ. Прежние 11/13/14/15/
+     16/18/21/24/29 на 320 давали основной текст 13px — ниже мобильного
+     стандарта, а пилюли и подписи упирались в порог читаемости 12px и
+     становились нечитаемыми. Новые якоря: 320 — 13/15/16/17/19/22/28/30/35,
+     425 — 13,5/15,5/17/18,5/21/25,5/34/37/44.
+     Якорь 768 и всё выше НЕ ТРОНУТЫ: правка выполаживает шкалу только на
+     компактной стороне, отрезок 425→768 стал положе, а 768→1440 остался прежним.
+     Стыковка на 768 проверена арифметикой: новый отрезок 425→768 у fs-7 даёт
+     41,999px, существующий 768→1440 — 41,997px. Разрыва в шкале нет.
+     Заморозка ниже 320 — эти же значения. */
+  --sw-fs-1: 13px;
+  --sw-fs-2: 15px;
+  --sw-fs-3: 16px;
+  --sw-fs-4: 17px;
+  --sw-fs-5: 19px;
+  --sw-fs-6: 22px;
+  --sw-fs-7: 28px;
+  --sw-fs-8: 30px;
+  --sw-fs-9: 35px;
 
   /* Интерлиньяж — БЕЗРАЗМЕРНЫЙ множитель, одно объявление на все ширины.
      Пиксельные ступени сняты в ревизии 2 и медиазапросами больше не гоняются.
@@ -192,11 +204,28 @@
      (design_system 2.9), потолок у всех ступеней на 1440. Полы монотонны —
      на мобильном, где все четыре стоят на полу, шкала не переворачивается.
      Границы 1024 и 375 этим сняты: под радиус они больше не нужны, а 375
-     других ролей в проекте не имела и из реестра границ ушла (2.7). */
-  --sw-radius-1: clamp(8px,  0.833vw, 12px);
-  --sw-radius-2: clamp(10px, 1.389vw, 20px);
-  --sw-radius-3: clamp(12px, 1.944vw, 28px);
-  --sw-radius-4: clamp(14px, 3.19vw,  46px);
+     других ролей в проекте не имела и из реестра границ ушла (2.7).
+
+     ПОЛЫ ОПУЩЕНЫ ПРАВКОЙ МОБИЛЬНОЙ АДАПТАЦИИ: 8/10/12/14 → 3/4/6/9.
+     Прежние полы срабатывали слишком рано — --sw-radius-4 замерзал уже
+     на 439px, --sw-radius-1 на 960px, — и ниже этих отметок четыре ступени
+     схлопывались в одну полосу 8…14px: крупная панель и мелкая плашка
+     получали почти одинаковый радиус, иерархия вложенности пропадала.
+     Отсюда и жалоба «на 425 и 768 скругления то слишком сильные, то слишком
+     слабые»: сильные — потому что у мелких коробок радиус застрял на полу,
+     слабые — потому что у крупных он перестал расти.
+     Новые полы пропорциональны потолкам (3/4/6/9 против 12/20/28/46), поэтому
+     шкала не переворачивается и не схлопывается. Пол --sw-radius-4 срабатывает
+     только ниже 282px, --sw-radius-1 — ниже 360px: на всех ходовых ширинах
+     телефонов шкала остаётся живой.
+     Коэффициенты и потолки НЕ ТРОНУТЫ — на десктопе не сдвинулось ничего.
+     ФОЛБЭКИ В СЕКЦИЯХ ОБЯЗАНЫ ПОВТОРЯТЬ ЭТИ ЗНАЧЕНИЯ ДОСЛОВНО. Разойдётся
+     фолбэк с токеном — при отсутствии головного блока секция уедет на старый
+     пол, и ошибки в консоли не будет (design_system 3). */
+  --sw-radius-1: clamp(3px, 0.833vw, 12px);
+  --sw-radius-2: clamp(4px, 1.389vw, 20px);
+  --sw-radius-3: clamp(6px, 1.944vw, 28px);
+  --sw-radius-4: clamp(9px, 3.19vw,  46px);
   --sw-radius-pill: 999px;
 
   /* ─── тени (2.5) ─── */
@@ -254,31 +283,37 @@
    проекта этот блок не заводит.
    Селектор один и тот же :root — правила объявляют только переменные и ни
    одного элемента страницы Тильды не оформляют. */
+/* Отрезок 320 → 425. Якоря подняты правкой мобильной адаптации, см. :root.
+   320: 13 / 15 / 16 / 17 / 19 / 22 / 28 / 30 / 35
+   425: 13,5 / 15,5 / 17 / 18,5 / 21 / 25,5 / 34 / 37 / 44 */
 @media (min-width: 320px) {
   :root {
-    --sw-fs-1: calc(0.95238vw + 7.95px);
-    --sw-fs-2: calc(0.95238vw + 9.95px);
-    --sw-fs-3: calc(0.95238vw + 10.95px);
-    --sw-fs-4: calc(1.90476vw + 8.90px);
-    --sw-fs-5: calc(2.85714vw + 6.86px);
-    --sw-fs-6: calc(3.80952vw + 5.81px);
-    --sw-fs-7: calc(5.71429vw + 2.71px);
-    --sw-fs-8: calc(5.71429vw + 5.71px);
-    --sw-fs-9: calc(6.66667vw + 7.67px);
+    --sw-fs-1: calc(0.47619vw + 11.48px);
+    --sw-fs-2: calc(0.47619vw + 13.48px);
+    --sw-fs-3: calc(0.95238vw + 12.95px);
+    --sw-fs-4: calc(1.42857vw + 12.43px);
+    --sw-fs-5: calc(1.90476vw + 12.90px);
+    --sw-fs-6: calc(3.33333vw + 11.33px);
+    --sw-fs-7: calc(5.71429vw + 9.71px);
+    --sw-fs-8: calc(6.66667vw + 8.67px);
+    --sw-fs-9: calc(8.57143vw + 7.57px);
   }
 }
 
+/* Отрезок 425 → 768. Стал заметно положе прежнего: правый конец (768) не
+   тронут, левый поднят. Именно этот отрезок и закрывает жалобу на мелкий
+   текст — 375px лежит внутри него. */
 @media (min-width: 425px) {
   :root {
-    --sw-fs-1: calc(0.58309vw + 9.52px);
-    --sw-fs-2: calc(0.58309vw + 11.52px);
-    --sw-fs-3: calc(0.87464vw + 11.28px);
-    --sw-fs-4: calc(0.87464vw + 13.28px);
-    --sw-fs-5: calc(1.45773vw + 12.80px);
-    --sw-fs-6: calc(2.62391vw + 10.85px);
-    --sw-fs-7: calc(4.37318vw + 8.41px);
-    --sw-fs-8: calc(4.66472vw + 10.17px);
-    --sw-fs-9: calc(5.83090vw + 11.22px);
+    --sw-fs-1: calc(0.14577vw + 12.88px);
+    --sw-fs-2: calc(0.14577vw + 14.88px);
+    --sw-fs-3: calc(0.29155vw + 15.76px);
+    --sw-fs-4: calc(0.43732vw + 16.64px);
+    --sw-fs-5: calc(0.87464vw + 17.28px);
+    --sw-fs-6: calc(1.60350vw + 18.69px);
+    --sw-fs-7: calc(2.33236vw + 24.09px);
+    --sw-fs-8: calc(2.62391vw + 25.85px);
+    --sw-fs-9: calc(3.49854vw + 29.13px);
   }
 }
 
@@ -471,14 +506,20 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 /* Контейнер секции. Фиксирован нашим CSS (у T123 настройки «зафиксировать блок»
    нет), слой --sw-z-sticky. Сам прозрачен и кликов не перехватывает: зазоры
    вокруг панели иначе перекрыли бы соседнюю секцию. Клики принимает только панель.
-   padding контейнера и есть зазоры от краёв вьюпорта: верх / бока / низ. */
+   padding контейнера и есть зазоры от краёв вьюпорта: верх / бока / низ.
+   Значения ниже — компактная сторона границы 1024/1025 и уже уменьшены на 40%
+   (боковой отступ 15 → 9px, нижний зазор 8 → 4,8px, design_system 7).
+   Полную величину возвращает блок «1025px и выше» — она там своя, с анкерами
+   1025 и 2560, и правкой мобильной адаптации не тронута.
+   Высота панели в сокращение НЕ входит: 72px держат бургер 44px и тач-минимум
+   PRD 14, продление пропорции увело бы её ниже. */
 .sw-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: var(--sw-z-sticky, 100);
-  padding: 0 15px 8px;
+  padding: 0 9px 4.8px;
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: var(--sw-fs-3, 32px);
   line-height: var(--sw-lh-3, 1.24);
@@ -513,8 +554,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
   border-radius:
     0 0
-    var(--sw-radius-4, clamp(14px, 3.19vw, 46px))
-    var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+    var(--sw-radius-4, clamp(9px, 3.19vw, 46px))
+    var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
   pointer-events: auto;
   animation: sw-header-slide-in var(--sw-dur-entrance, 700ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 }
@@ -1290,7 +1331,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   flex-direction: column;
   min-height: 100vh;
   min-height: 100svh;
-  padding: 80px 15px 14px;
+  padding: 76.8px 9px 8.4px;
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: var(--sw-fs-3, 32px);
   line-height: var(--sw-lh-3, 1.24);
@@ -1345,7 +1386,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: 0 15px;
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
 }
 
 /* ─── текстовый блок ─── */
@@ -1428,7 +1469,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   margin: 0 auto;
   padding: 0;
   color: var(--sw-color-text, #242424);
-  font-size: var(--sw-fs-7, 78px);
+  font-size: var(--sw-fs-8, 86px);
   font-weight: var(--sw-fw-regular, 400);
   line-height: var(--sw-lh-7, 1.10);
   text-align: center;
@@ -1486,7 +1527,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   height: 57px;
   margin: 0;
   padding: 0;
-  border-radius: var(--sw-radius-3, clamp(12px, 1.944vw, 28px));
+  border-radius: var(--sw-radius-3, clamp(6px, 1.944vw, 28px));
   background: var(--sw-color-cta, #242424);
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-size: var(--sw-fs-2, 28px);
@@ -1522,7 +1563,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   overflow: hidden;
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
 }
 
 /* Соотношения сторон нет: видео и постер обрезаются по cover, размер диктует
@@ -1570,9 +1611,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 @media (min-width: 769px) {
   .sw-hero {
     padding:
-      calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, 1.787vw - 5.74px, 40px))
-      clamp(15px, 1.396vw + 4.26px, 40px)
-      clamp(8px, 1.787vw - 5.74px, 40px);
+      calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(4.8px, 1.0722vw - 3.444px, 24px))
+      clamp(9px, 0.8376vw + 2.556px, 24px)
+      clamp(4.8px, 1.0722vw - 3.444px, 24px);
   }
 
   .sw-hero__layout {
@@ -1621,6 +1662,23 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   }
 
   .sw-hero__cta--media { display: none; }
+}
+
+/* ─── 1025px и выше: метрики страницы в полную величину ─── */
+/* Граница 1024/1025 стала метрической: на <1024 боковой отступ страницы, зазор
+   до следующей секции и компенсация шапки уменьшены на 40% (design_system 7).
+   Значения ≥1025 не менялись — здесь они восстанавливаются дословно.
+   Разрыв на границе сознательный (design_system 2.9 правило 5): по разные
+   стороны стоят разные законы, а не разные коэффициенты одного, и сглаживать
+   его подгонкой нельзя — сломается компактная сторона.
+   Высота панели шапки в правку НЕ входит: в ней живёт бургер 44px. */
+@media (min-width: 1025px) {
+  .sw-hero {
+    padding:
+      calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, 1.787vw - 5.74px, 40px))
+      clamp(15px, 1.396vw + 4.26px, 40px)
+      clamp(8px, 1.787vw - 5.74px, 40px);
+  }
 }
 
 /* ─── 425px и ниже: у кнопки меняются только цвета в покое ─── */
@@ -1771,7 +1829,10 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    страницы. В Тильде фон страницы задаётся в настройках страницы, не кодом.
    Нижний зазор до следующей секции — метрика страницы design_system 7.
    Свободный член в ней допустим: это посадка секции на странице, а не размер
-   её содержимого (2.9). */
+   её содержимого (2.9).
+   Формула здесь ОРИГИНАЛЬНАЯ, без сокращения на 40%: у секции есть собственное
+   правило нижнего зазора по границе 1024 (блок max-width: 1024px ниже), и весь
+   диапазон <1024 закрыт им. Сокращение применено там, к плоскому значению. */
 .sw-benefits {
   margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
@@ -1784,7 +1845,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 .sw-benefits__container {
   max-width: 2560px;
   margin-inline: auto;
-  padding-inline: 15px;
+  padding-inline: 9px;
 }
 
 /* ─── панель ─── */
@@ -1802,7 +1863,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
 }
 
 /* ─── опорный контейнер зон ─── */
@@ -1871,7 +1932,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    Заливка живёт на СИМВОЛЕ: градиент на нём, граница резкая и проходит сквозь
    него. Очередь при этом ведётся по СТРОКАМ — строка идёт отдельной дорожкой,
    дорожки перекрываются; это поведение секции, разметки оно не касается.
-   В покое символ залит на 0%, то есть целиком в цвете --sw-color-text-muted;
+   В покое символ залит на 0%, то есть целиком в цвете --sw-color-text-prefill;
    проценты подставляет поведение секции.
    -webkit-background-clip обязателен рядом с background-clip: без префикса
    в WebKit текст станет невидимым.
@@ -1885,7 +1946,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   --sw-benefits-fill: 0%;
   background-image: linear-gradient(90deg,
     var(--sw-color-text, #242424) 0 var(--sw-benefits-fill),
-    var(--sw-color-text-muted, #8F8F8F) var(--sw-benefits-fill) 100%);
+    var(--sw-color-text-prefill, #D3D3D3) var(--sw-benefits-fill) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -2020,12 +2081,21 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    карточки, на 2560 (карточка 75% main в композиции ≥1025) реальный радиус
    уходит в потолок клампа раньше и застревает на 32px, не дойдя плавно.
    Калибровка — по факту резолвинга, от sw-main: на вьюпорте 320 (карточка
-   в стеке занимает всю ширину main) 100cqi = 260,000px, на 2560 (две колонки,
-   карточка — 75% main) 100cqi = 2286,031px; 14px и 32px заданы на этих точках.
-   Свободный член в интерполяции есть: это геометрия карточки, а не размер
-   контента, запрет 2.9 на него не распространяется (тот же класс отклонения,
-   что уже зафиксирован для самого радиуса в 8.2.1).
-   K = (32−14) / (22,86031−2,60000) = 0,88844; B = 14 − K·2,60000 = 11,69.
+   в стеке занимает всю ширину main) 100cqi = 257px, на 1440 — 1264,28px,
+   на 2560 (две колонки, карточка — 75% main) — 2286,031px.
+   СВОБОДНЫЙ ЧЛЕН СНЯТ ПРАВКОЙ МОБИЛЬНОЙ АДАПТАЦИИ. Прежняя интерполяция
+   0,88844cqi + 11,69px держалась на свободном члене, и на узких экранах он
+   доминировал: замер на 425 давал карточке 14,84px при радиусе панели,
+   которая её содержит, 13,56px — вложенное скругление выходило КРУПНЕЕ
+   внешнего, и структура секции разваливалась. Это же нарушало 2.9 правило 1.
+   Теперь закон чистый: радиус есть постоянная доля собственной ширины.
+   Коэффициент откалиброван замером на 1440, где композиция принята: cqi там
+   12,6428 (100cqi = 1264,28px), радиус 22,92px, K = 22,92 / 12,6428 = 1,813.
+   Потолок 32px не тронут — он тот же и достигается на 100cqi ≈ 1765px, то есть
+   около вьюпорта 1990 вместо прежних 2560. На 2560 значение прежнее, 32px:
+   меняется только то, где начинается полка, и на глаз это незаметно.
+   Пол 6px пропорционален потолку в том же отношении, что полы шкалы 2.4
+   (6/32 против 9/46), и срабатывает только ниже вьюпорта ~410px.
    Двойное объявление: первая строка — плоский фолбэк для браузеров без cqi
    (Chrome <105 / Safari <16 / Firefox <110, риск задокументирован 8.2.5),
    вторая перекрывает её там, где cqi понятен. Фолбэк равен потолку клампа —
@@ -2039,7 +2109,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   margin-top: clamp(36px, 10.8vw, 48px);
   padding: 20px 25px 20px 20px;
   border-radius: 32px;
-  border-radius: clamp(14px, calc(0.88844cqi + 11.69px), 32px);
+  border-radius: clamp(6px, 1.813cqi, 32px);
   background: var(--sw-color-bg-page, #F4F5F5);
 }
 
@@ -2082,14 +2152,17 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    контейнером — это и есть sw-card, ровно как задумано (в отличие от радиуса
    самой карточки чуть выше: та контейнер sw-card САМА и вынуждена смотреть
    мимо себя, на sw-main, — см. комментарий там).
-   12px на 100cqi = 237,625px (вьюпорт 320, карточка в стеке), 28px на
-   100cqi = 1587,828px (вьюпорт 2560, две колонки) — обе величины измерены
-   напрямую внутри sw-card, а не выведены из его border-box.
    Шкала --sw-radius-1…4 (design_system 2.4) здесь не подходит ни на одном
-   конце диапазона: она считается от вьюпорта, а карточке нужен постоянный
+   конце диапазона: она считается от вьюпорта, а фото нужен постоянный
    процент СВОЕЙ ширины. Поэтому оба конца литеральные, вне шкалы — тот же
-   класс отклонения, что у карточки (брифа 8.2.1).
-   K = (28−12) / (15,87828−2,37625) = 1,18501; B = 12 − K·2,37625 = 9,18.
+   класс отклонения, что у карточки (бриф 8.2.1).
+   СВОБОДНЫЙ ЧЛЕН СНЯТ ПРАВКОЙ МОБИЛЬНОЙ АДАПТАЦИИ, по тем же основаниям, что
+   у карточки выше: прежние 1,18501cqi + 9,18px на 425 давали 13,03px при
+   радиусе панели 13,56px — фото и панель почти сравнивались, иерархия
+   вложенности пропадала.
+   Коэффициент откалиброван замером на 1440: cqi там 8,7694 (100cqi =
+   876,94px), радиус 19,57px, K = 19,57 / 8,7694 = 2,232. Потолок 28px не
+   тронут, на 2560 значение прежнее.
    Фолбэк без cqi — тем же порядком, что у карточки: первая строка держит
    прежнее значение для браузеров без контейнерных запросов. */
 .sw-benefits__photo {
@@ -2097,7 +2170,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   width: 100%;
   height: 100%;
   border-radius: 28px;
-  border-radius: clamp(12px, calc(1.18501cqi + 9.18px), 28px);
+  border-radius: clamp(5px, 2.232cqi, 28px);
   object-fit: cover;
   object-position: center;
 }
@@ -2197,6 +2270,34 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   .sw-benefits__tab:hover .sw-benefits__tab-icon--light { opacity: 1; }
 }
 
+/* ─── 768px и ниже: пилюли крупнее и во всю ширину ряда ─── */
+/* Две правки, обе только в компактном состоянии.
+
+   КЕГЕЛЬ. Доля контейнера 3.8cqi ниже 768 всегда упиралась в пол клампа: на
+   375px sw-main шириной ~313px даёт 11,9px, то есть пилюля жила на пороге
+   читаемости 12px и была нечитаемой. Здесь доля СНИМАЕТСЯ и берётся чистая
+   ступень --sw-fs-3: 16px на 320, 17 на 425, 18 на 768. Правка якорей шкалы
+   (ЗОНА A) сама по себе этого не давала — кегль пилюли шкалой не управлялся.
+   Все внутренние метрики пилюли заданы в em от собственного кегля, поэтому
+   иконка, зазор и padding вырастают вместе с ним одним движением, отдельных
+   правок не требуют. Высота при этом уходит с 44 на ~50px — тач-минимум
+   PRD 14 перекрыт с запасом, min-height остаётся страховкой.
+
+   ШИРИНА. width: max-content давал пилюли по контенту: ряд с переносом
+   выравнивался по левому краю, справа оставалась дыра, а сами цели были
+   мелкими. flex: 1 1 auto распускает их на всю ширину ряда поровну,
+   justify-content: center возвращает содержимое в середину пилюли (грид из
+   двух колонок иначе прижал бы иконку с подписью к левому краю).
+   Вкладок четыре — на 320 они лягут 1+1+1+1, на 425 и выше 2+2. */
+@media (max-width: 768px) {
+  .sw-benefits__tab {
+    flex: 1 1 auto;
+    width: auto;
+    justify-content: center;
+    font-size: var(--sw-fs-3, 32px);
+  }
+}
+
 /* ─── 769px и выше: ТОЛЬКО боковой отступ страницы ─── */
 /* Единственная величина секции, привязанная к 768/769, и единственная причина,
    по которой медиазапросов по вьюпорту здесь два, а не один.
@@ -2208,18 +2309,26 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    Композиции этот блок не касается: раскладка целиком в блоке 1025 ниже. */
 @media (min-width: 769px) {
   .sw-benefits__container {
-    padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
+    padding-inline: clamp(9px, 0.8376vw + 2.556px, 24px);
   }
 }
 
 /* ─── 1024px и ниже: нижний зазор фиксирован ─── */
 @media (max-width: 1024px) {
-  .sw-benefits { margin-bottom: 8px; }
+  .sw-benefits { margin-bottom: 4.8px; }
 }
 
 /* ─── 1025px и выше: композиция в две колонки ─── */
-/* Единственная граница перестроения раскладки в секции. */
+/* Единственная граница перестроения раскладки в секции. С правкой мобильной
+   адаптации 1024/1025 несёт здесь и вторую роль — метрическую: на <1024 боковой
+   отступ страницы уменьшен на 40% (design_system 7), и полная величина
+   восстанавливается здесь же, дословно. Разрыв 11,1 → 18,6px сознательный
+   (design_system 2.9 правило 5). */
 @media (min-width: 1025px) {
+  .sw-benefits__container {
+    padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
+  }
+
   .sw-benefits__panel {
     padding-inline: clamp(55px, 3.77vw, 96px);
     padding-block: clamp(57px, 7.45vw, 190px);
@@ -2678,9 +2787,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    поведению секции единственным читаемым источником этой величины (в компактном
    состоянии и при reduced-motion карточки статичны, и computed top у них auto). */
 .sw-portfolio {
-  --sw-portfolio-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
-  margin-bottom: calc(clamp(8px, calc(1.787vw - 5.74px), 40px) - (100vh - var(--sw-portfolio-top)));
-  margin-bottom: calc(clamp(8px, calc(1.787vw - 5.74px), 40px) - (100svh - var(--sw-portfolio-top)));
+  --sw-portfolio-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(4.8px, calc(1.0722vw - 3.444px), 24px));
+  margin-bottom: calc(clamp(4.8px, calc(1.0722vw - 3.444px), 24px) - (100vh - var(--sw-portfolio-top)));
+  margin-bottom: calc(clamp(4.8px, calc(1.0722vw - 3.444px), 24px) - (100svh - var(--sw-portfolio-top)));
   scroll-margin-top: var(--sw-portfolio-top);
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: var(--sw-fs-3, 32px);
@@ -2690,9 +2799,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
 @media (max-width: 768px) {
   .sw-portfolio {
-    --sw-portfolio-top: 80px;
-    margin-bottom: calc(8px - (100vh - var(--sw-portfolio-top)));
-    margin-bottom: calc(8px - (100svh - var(--sw-portfolio-top)));
+    --sw-portfolio-top: 76.8px;
+    margin-bottom: calc(4.8px - (100vh - var(--sw-portfolio-top)));
+    margin-bottom: calc(4.8px - (100svh - var(--sw-portfolio-top)));
   }
 }
 
@@ -2700,10 +2809,29 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 .sw-portfolio__container {
   max-width: 2560px;
   margin-inline: auto;
-  padding-inline: 15px;
+  padding-inline: 9px;
 }
 
 @media (min-width: 769px) {
+  .sw-portfolio__container {
+    padding-inline: clamp(9px, 0.8376vw + 2.556px, 24px);
+  }
+}
+
+/* ─── 1025px и выше: метрики страницы в полную величину ─── */
+/* Граница 1024/1025 стала метрической: на <1024 боковой отступ страницы, зазор
+   до следующей секции и компенсация шапки уменьшены на 40% (design_system 7).
+   Значения ≥1025 не менялись — восстанавливаются дословно. Разрыв на границе
+   сознательный, design_system 2.9 правило 5.
+   Обе строки margin-bottom повторяются целиком: вычет трейлинга стопки завязан
+   на --sw-portfolio-top, а он здесь переобъявляется. */
+@media (min-width: 1025px) {
+  .sw-portfolio {
+    --sw-portfolio-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+    margin-bottom: calc(clamp(8px, calc(1.787vw - 5.74px), 40px) - (100vh - var(--sw-portfolio-top)));
+    margin-bottom: calc(clamp(8px, calc(1.787vw - 5.74px), 40px) - (100svh - var(--sw-portfolio-top)));
+  }
+
   .sw-portfolio__container {
     padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
   }
@@ -2803,13 +2931,25 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(20px, 4.6vw, 35px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
   transform-origin: center top;
   will-change: transform;
 }
 
 .sw-portfolio__card + .sw-portfolio__card {
-  margin-top: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  margin-top: clamp(4.8px, calc(1.0722vw - 3.444px), 24px);
+}
+
+/* Зазор между карточками — та же метрика страницы, что и зазор между секциями:
+   карточки читаются панелями на подложке, и шов между ними обязан совпадать
+   со швом между блоками. На <1024 он уменьшен на 40%, здесь возвращается
+   в полную величину. Блок стоит отдельно от основного 1025 в начале секции:
+   правило выше объявлено ниже него по файлу и при равной специфичности
+   перебило бы медиазапрос. */
+@media (min-width: 1025px) {
+  .sw-portfolio__card + .sw-portfolio__card {
+    margin-top: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  }
 }
 
 /* ─── трейлинг ─── */
@@ -2893,7 +3033,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   /* Отступление от токена --sw-radius-pill: здесь нужен не стадион, а мягкий
      прямоугольник, решение по этой секции. Плоский клампе, не var — это не
      токен ЗОНЫ A, а локальная величина секции. */
-  border-radius: clamp(10px, 1.1vw, 18px);
+  border-radius: clamp(4px, 1.1vw, 18px);
   background: var(--sw-color-bg-page, #F4F5F5);
   color: var(--sw-color-text-pill, #5E5E5E);
   font-weight: var(--sw-fw-regular, 400);
@@ -3024,7 +3164,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
        120px в 6.7 задан композицией Hero (кнопка на всю ширину панели) и сюда
        не переносится. min-height держит тач-минимум 44px (PRD 14);
      — радиус не литеральные 24 / 12px из 6.7, а тот же плоский кламп, что
-       у пилюль метаданных: clamp(10px, 1.1vw, 18px), решение по этой секции;
+       у пилюль метаданных: clamp(4px, 1.1vw, 18px), решение по этой секции;
      — вертикальный padding поднят с 0.65em до 1em: на 0.65em текст занимал
        почти всю высоту кнопки, воздух над и под меткой не читался;
      — инверсия цветов на ≤425 НЕ переносится: в Hero кнопка на узких ширинах
@@ -3042,7 +3182,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   max-width: 100%;
   min-height: 44px;
   padding: 1em 1.4em;
-  border-radius: clamp(10px, 1.1vw, 18px);
+  border-radius: clamp(4px, 1.1vw, 18px);
   background: var(--sw-color-cta, #242424);
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
@@ -3079,7 +3219,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   position: relative;
   overflow: hidden;
   min-width: 0;
-  border-radius: clamp(10px, 2.4vw, 20px);
+  border-radius: clamp(4px, 2.4vw, 20px);
   container-type: size;
 }
 
@@ -3244,7 +3384,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
      на все ширины. Прежний clamp(16px, 1.133vw, 29px) был буквальным близнецом
      формулы кнопки-якоря Hero и снят вместе с ней. */
 
-  .sw-portfolio__media { border-radius: clamp(14px, 1.1vw, 28px); }
+  .sw-portfolio__media { border-radius: clamp(6px, 1.1vw, 28px); }
 }
 
 /* ─── hover ─── */
@@ -3309,7 +3449,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    включает плееру контролы, и до них нужно дотянуться. */
 @media (prefers-reduced-motion: reduce) {
   .sw-portfolio {
-    margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+    margin-bottom: clamp(4.8px, calc(1.0722vw - 3.444px), 24px);
   }
 
   .sw-portfolio__trail { display: none; }
@@ -3327,7 +3467,14 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 }
 
 @media (prefers-reduced-motion: reduce) and (max-width: 768px) {
-  .sw-portfolio { margin-bottom: 8px; }
+  .sw-portfolio { margin-bottom: 4.8px; }
+}
+
+/* Метрика страницы в полную величину при снятых анимациях: блок reduced-motion
+   выше перебивает основной блок 1025 (он стоит раньше и той же специфичности),
+   поэтому величину приходится повторить и здесь. */
+@media (prefers-reduced-motion: reduce) and (min-width: 1025px) {
+  .sw-portfolio { margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px); }
 }
 </style>
 <!-- разметка — секция Портфолио -->
@@ -3725,8 +3872,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    альтернатива «снять isolation у стопки» отброшена замером: карточки
    проваливаются под весь поток и кнопки в них перестают ловить клики. */
 .sw-catalog {
-  --sw-catalog-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
-  margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  --sw-catalog-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(4.8px, calc(1.0722vw - 3.444px), 24px));
+  margin-bottom: clamp(4.8px, calc(1.0722vw - 3.444px), 24px);
   scroll-margin-top: var(--sw-catalog-top);
   position: relative;
   z-index: 0;
@@ -3738,8 +3885,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
 @media (max-width: 768px) {
   .sw-catalog {
-    --sw-catalog-top: 80px;
-    margin-bottom: 8px;
+    --sw-catalog-top: 76.8px;
+    margin-bottom: 4.8px;
   }
 }
 
@@ -3747,7 +3894,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 .sw-catalog__container {
   max-width: 2560px;
   margin-inline: auto;
-  padding-inline: 15px;
+  padding-inline: 9px;
 }
 
 /* ─── панель ─── */
@@ -3763,7 +3910,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
 }
 
 /* ─── опорный контейнер зон ─── */
@@ -3821,7 +3968,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   --sw-catalog-fill: 0%;
   background-image: linear-gradient(90deg,
     var(--sw-color-text, #242424) 0 var(--sw-catalog-fill),
-    var(--sw-color-text-muted, #8F8F8F) var(--sw-catalog-fill) 100%);
+    var(--sw-color-text-prefill, #D3D3D3) var(--sw-catalog-fill) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -3935,21 +4082,25 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 /* Подложка каталога, цвет фона страницы — тот же приём, что у карточки SEC-3.
    Радиус — кламп, и cqi здесь считается от sw-main: собственного container-type
    область не объявляет, поэтому её cqi резолвится к ближайшему предку-контейнеру.
-   Коэффициенты взяты у sw-benefits__card и дают те же 14px на 320 и 32px на 2560,
+   Коэффициент взят у sw-benefits__card и совпадает с ним на всех ширинах,
    потому что опорная коробка у обеих секций по ширине одна и та же.
-   Свободный член в интерполяции есть: это геометрия подложки, а не размер
-   контента, запрет 2.9 на него не распространяется.
+   СВОБОДНЫЙ ЧЛЕН СНЯТ ПРАВКОЙ МОБИЛЬНОЙ АДАПТАЦИИ: прежние
+   0,88844cqi + 11,69px на 425 давали подложке 14,84px при радиусе панели,
+   которая её содержит, 13,56px — вложенное скругление выходило крупнее
+   внешнего. Закон теперь чистый (2.9 правило 1): постоянная доля собственной
+   ширины, K = 1,813 по замеру на 1440, потолок 32px не тронут.
+   Развёрнутый мотив и калибровка — в комментарии к sw-benefits__card.
    Двойное объявление: первая строка — плоский фолбэк для браузеров без cqi. */
 .sw-catalog__board {
   margin-top: clamp(36px, 10.8vw, 48px);
   padding: clamp(14px, 1.6vw, 41px);
   border-radius: 32px;
-  border-radius: clamp(14px, calc(0.88844cqi + 11.69px), 32px);
+  border-radius: clamp(6px, 1.813cqi, 32px);
   background: var(--sw-color-bg-page, #F4F5F5);
 }
 
 /* ─── сетка карточек ─── */
-/* Одна колонка на ≤768, три на 769–1024, четыре на ≥1025.
+/* Одна колонка на ≤425, две на 426–768, три на 769–1024, четыре на ≥1025.
    Четвёртая колонка добавлена по требованию пользователя «где помещаются
    четыре карточки — должно быть четыре»; ею же карточка уменьшается: на 1440
    ширина карточки идёт с 401 до 297px. Ровно в полтора раза целым числом
@@ -3960,14 +4111,29 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    Число колонок задаётся явно, а не auto-fill с минимумом в px: при auto-fill
    карточка перестала бы расти с вьюпортом и на 2560 дала бы семь колонок
    по 270px — это нарушение 2.9 (размер есть доля вьюпорта).
-   С design_system 7 (4 / 3 / 2) сходятся обе десктопные ступени; ≤768 остаётся
-   на одной колонке по решению пользователя — остаток долга документации.
    gap пропорциональный, а не плоский --sw-space-24: 2.9 требует доли вьюпорта,
-   верх шкалы 26px совпадает с токеном по величине. */
+   верх шкалы 26px совпадает с токеном по величине.
+
+   СТУПЕНЬ 426–768 ДОБАВЛЕНА ПРАВКОЙ МОБИЛЬНОЙ АДАПТАЦИИ. Прежде сетка шла
+   4 / 3 / 1 и на 768 схлопывалась с трёх колонок сразу в одну: карточка
+   становилась во всю ширину подложки, и каталог на планшете читался лентой.
+   Теперь 4 / 3 / 2 / 1, и с таблицей design_system 7 сходятся уже три ступени
+   из четырёх — прежний остаток долга документации закрыт.
+   Новой границы проект не заводит: 426 — обратная сторона уже
+   зарегистрированной 425 (design_system 2.7), на которой в этой же секции
+   ломается на две строки лейбл, а в SEC-1, SEC-6, SEC-10 и SEC-14 стоят
+   собственные правила. Ширина карточки по ступени: 167px на 426, 326px
+   на 768. */
 .sw-catalog__list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: clamp(10px, 1vw, 26px);
+}
+
+@media (min-width: 426px) {
+  .sw-catalog__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* ─── карточка ─── */
@@ -4013,7 +4179,12 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   display: block;
   overflow: hidden;
   border-radius: 20px;
-  border-radius: clamp(10px, 2.8cqi, 20px);
+  /* Пол опущен 10 → 4px правкой мобильной адаптации. 2,8cqi — уже чистая доля
+     собственной ширины карточки и правки не требует, но пол 10px срабатывал
+     почти везде, кроме диапазона 426–768: на 1440 доля даёт 8,2px, на 425 —
+     9,1px, и радиус фото стоял на одной величине при карточках вдвое разной
+     ширины. Пол 4px не срабатывает нигде выше вьюпорта 320. */
+  border-radius: clamp(4px, 2.8cqi, 20px);
   text-decoration: none;
   cursor: pointer;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
@@ -4050,7 +4221,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    Вариант design_system 6.7: ведёт на якорь внутри страницы, виртуальной
    страницы не создаёт, своей цели аналитики не имеет (PRD 11). Цвета оттуда
    дословно. Отличия, все сознательные и совпадающие с решениями Портфолио:
-     — радиус не литеральные 24 / 12px из 6.7, а кламп clamp(10px, 1.1vw, 18px)
+     — радиус не литеральные 24 / 12px из 6.7, а кламп clamp(4px, 1.1vw, 18px)
        (ответ 5): ступенька на границе рядом со скруглением выделенной области
        читалась бы как чужой элемент;
      — высота не задаётся клампом, её даёт контент через padding в em; верх шкалы
@@ -4068,7 +4239,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   margin: 0;
   padding: 1em 1.4em;
   border: 0;
-  border-radius: clamp(10px, 1.1vw, 18px);
+  border-radius: clamp(4px, 1.1vw, 18px);
   background: var(--sw-color-cta, #242424);
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
@@ -4140,6 +4311,26 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   outline-offset: 3px;
 }
 
+/* ─── 768px и ниже: пилюли фильтров крупнее и во всю ширину ряда ─── */
+/* Правка симметрична sw-benefits__tab, мотив там же и полностью совпадает:
+   доля 3.8cqi ниже 768 всегда упиралась в пол 12px, и фильтр становился
+   нечитаемым и трудным для попадания. Здесь доля снимается, кегль берётся
+   ступенью --sw-fs-3 (16 / 17 / 18px на 320 / 425 / 768), внутренние метрики
+   в em подтягиваются сами.
+   Фильтров ПЯТЬ, а не четыре, как вкладок в SEC-3: на 375 они лягут 2 + 2 + 1,
+   и последняя пилюля растянется на всю ширину ряда. Это следствие растяжки,
+   а не дефект — ряд заполняется целиком на всех ширинах.
+   Блок стоит здесь, а не в общем max-width: 768px в начале секции: тот
+   объявлен ДО .sw-catalog__filter и при равной специфичности был бы перебит. */
+@media (max-width: 768px) {
+  .sw-catalog__filter {
+    flex: 1 1 auto;
+    width: auto;
+    justify-content: center;
+    font-size: var(--sw-fs-3, 32px);
+  }
+}
+
 /* ─── hover ─── */
 /* Только под (hover: hover) и с 769: на тач-устройстве состояние залипает.
 
@@ -4181,7 +4372,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    стыков разные, а margin грид-элемента с ним не схлопывается. */
 @media (min-width: 769px) {
   .sw-catalog__container {
-    padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
+    padding-inline: clamp(9px, 0.8376vw + 2.556px, 24px);
   }
 
   .sw-catalog__panel {
@@ -4235,8 +4426,21 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    Здесь же граница работает второй ролью — числом колонок каталога: своей
    границы под сетку не заводится, мотив в комментарии к sw-catalog__list.
    Ширина карточки по этой ступени: 203px на 1025, 297px на 1440, 398px
-   на 1920, 531px на 2560. */
+   на 1920, 531px на 2560.
+   ТРЕТЬЯ РОЛЬ ГРАНИЦЫ — МЕТРИЧЕСКАЯ. На <1024 боковой отступ страницы, зазор
+   до следующей секции и компенсация шапки уменьшены на 40% (design_system 7);
+   полная величина восстанавливается здесь, дословно. Разрыв на границе
+   сознательный, design_system 2.9 правило 5. */
 @media (min-width: 1025px) {
+  .sw-catalog {
+    --sw-catalog-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+    margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  }
+
+  .sw-catalog__container {
+    padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
+  }
+
   .sw-catalog__grid {
     grid-template-columns: 25% minmax(0, 1fr);
     grid-template-areas:
@@ -4668,9 +4872,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    переход по #sw-about из меню GlobalHeader ставит верх секции в нуль экрана,
    и первые ~120px уезжают под панель шапки. Проверено в браузере. */
 .sw-about {
-  --sw-about-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+  --sw-about-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(4.8px, calc(1.0722vw - 3.444px), 24px));
   scroll-margin-top: var(--sw-about-top);
-  margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  margin-bottom: clamp(4.8px, calc(1.0722vw - 3.444px), 24px);
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: var(--sw-fs-3, 32px);
   line-height: var(--sw-lh-3, 1.24);
@@ -4679,8 +4883,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
 @media (max-width: 768px) {
   .sw-about {
-    --sw-about-top: 80px;
-    margin-bottom: 8px;
+    --sw-about-top: 76.8px;
+    margin-bottom: 4.8px;
   }
 }
 
@@ -4691,10 +4895,26 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 .sw-about__container {
   max-width: 2560px;
   margin-inline: auto;
-  padding-inline: 15px;
+  padding-inline: 9px;
 }
 
 @media (min-width: 769px) {
+  .sw-about__container {
+    padding-inline: clamp(9px, 0.8376vw + 2.556px, 24px);
+  }
+}
+
+/* ─── 1025px и выше: метрики страницы в полную величину ─── */
+/* Граница 1024/1025 стала метрической: на <1024 боковой отступ страницы, зазор
+   до следующей секции и компенсация шапки уменьшены на 40% (design_system 7).
+   Значения ≥1025 не менялись — восстанавливаются дословно. Разрыв на границе
+   сознательный, design_system 2.9 правило 5. */
+@media (min-width: 1025px) {
+  .sw-about {
+    --sw-about-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+    margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  }
+
   .sw-about__container {
     padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
   }
@@ -4714,7 +4934,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
 }
 
 @media (min-width: 769px) {
@@ -4841,7 +5061,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    правило именования.
    Механика заливки — как у sw-benefits__char и sw-achievements__char: градиент
    живёт на СИМВОЛЕ, граница резкая и проходит сквозь него, в покое символ залит
-   на 0%, то есть целиком в цвете --sw-color-text-muted; проценты подставляет
+   на 0%, то есть целиком в цвете --sw-color-text-prefill; проценты подставляет
    поведение секции. -webkit-background-clip обязателен рядом с background-clip:
    без префикса в WebKit текст станет невидимым.
    Правило применяется только к сгенерированным узлам: их нет — заголовок стоит
@@ -4851,7 +5071,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   --sw-about-fill: 0%;
   background-image: linear-gradient(90deg,
     var(--sw-color-text, #242424) 0 var(--sw-about-fill),
-    var(--sw-color-text-muted, #8F8F8F) var(--sw-about-fill) 100%);
+    var(--sw-color-text-prefill, #D3D3D3) var(--sw-about-fill) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -4959,7 +5179,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   container-name: sw-card;
   margin: 0;
   padding: clamp(20px, 4.6vw, 35px);
-  border-radius: var(--sw-radius-3, clamp(12px, 1.944vw, 28px));
+  border-radius: var(--sw-radius-3, clamp(6px, 1.944vw, 28px));
   background: var(--sw-color-bg-page, #F4F5F5);
 }
 
@@ -5234,7 +5454,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    Нижний зазор до следующей секции — метрика страницы design_system 7,
    свободный член в ней допустим (2.9): это посадка секции, не размер контента. */
 .sw-achievements {
-  margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  margin-bottom: clamp(4.8px, calc(1.0722vw - 3.444px), 24px);
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: var(--sw-fs-3, 32px);
   line-height: var(--sw-lh-3, 1.24);
@@ -5242,17 +5462,32 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 }
 
 @media (max-width: 768px) {
-  .sw-achievements { margin-bottom: 8px; }
+  .sw-achievements { margin-bottom: 4.8px; }
 }
 
 /* ─── контейнер ─── */
 .sw-achievements__container {
   max-width: 2560px;
   margin-inline: auto;
-  padding-inline: 15px;
+  padding-inline: 9px;
 }
 
 @media (min-width: 769px) {
+  .sw-achievements__container {
+    padding-inline: clamp(9px, 0.8376vw + 2.556px, 24px);
+  }
+}
+
+/* ─── 1025px и выше: метрики страницы в полную величину ─── */
+/* Граница 1024/1025 стала метрической: на <1024 боковой отступ страницы и зазор
+   до следующей секции уменьшены на 40% (design_system 7). Значения ≥1025 не
+   менялись — восстанавливаются дословно. Разрыв на границе сознательный,
+   design_system 2.9 правило 5. */
+@media (min-width: 1025px) {
+  .sw-achievements {
+    margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  }
+
   .sw-achievements__container {
     padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
   }
@@ -5270,7 +5505,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
 }
 
 @media (min-width: 769px) {
@@ -5401,7 +5636,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   --sw-achievements-fill: 0%;
   background-image: linear-gradient(90deg,
     var(--sw-color-text, #242424) 0 var(--sw-achievements-fill),
-    var(--sw-color-text-muted, #8F8F8F) var(--sw-achievements-fill) 100%);
+    var(--sw-color-text-prefill, #D3D3D3) var(--sw-achievements-fill) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -5583,9 +5818,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    не нарушает: это посадка секции на странице, а не размер её содержимого
    (design_system 7). */
 .sw-steps {
-  --sw-steps-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+  --sw-steps-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(4.8px, calc(1.0722vw - 3.444px), 24px));
   scroll-margin-top: var(--sw-steps-top);
-  margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  margin-bottom: clamp(4.8px, calc(1.0722vw - 3.444px), 24px);
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: var(--sw-fs-3, 32px);
   line-height: var(--sw-lh-3, 1.24);
@@ -5594,8 +5829,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
 @media (max-width: 768px) {
   .sw-steps {
-    --sw-steps-top: 80px;
-    margin-bottom: 8px;
+    --sw-steps-top: 76.8px;
+    margin-bottom: 4.8px;
   }
 }
 
@@ -5606,10 +5841,26 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 .sw-steps__container {
   max-width: 2560px;
   margin-inline: auto;
-  padding-inline: 15px;
+  padding-inline: 9px;
 }
 
 @media (min-width: 769px) {
+  .sw-steps__container {
+    padding-inline: clamp(9px, 0.8376vw + 2.556px, 24px);
+  }
+}
+
+/* ─── 1025px и выше: метрики страницы в полную величину ─── */
+/* Граница 1024/1025 стала метрической: на <1024 боковой отступ страницы, зазор
+   до следующей секции и компенсация шапки уменьшены на 40% (design_system 7).
+   Значения ≥1025 не менялись — восстанавливаются дословно. Разрыв на границе
+   сознательный, design_system 2.9 правило 5. */
+@media (min-width: 1025px) {
+  .sw-steps {
+    --sw-steps-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+    margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  }
+
   .sw-steps__container {
     padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
   }
@@ -5627,7 +5878,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
 }
 
 @media (min-width: 769px) {
@@ -5750,7 +6001,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    правило именования.
    Механика заливки — как у sw-benefits__char и sw-about__char: градиент живёт
    на СИМВОЛЕ, а не на строке, граница резкая и проходит сквозь него; в покое
-   символ залит на 0%, то есть целиком в цвете --sw-color-text-muted,
+   символ залит на 0%, то есть целиком в цвете --sw-color-text-prefill,
    проценты подставляет поведение секции. -webkit-background-clip обязателен
    рядом с background-clip: без префикса в WebKit текст станет невидимым.
    Правило применяется только к сгенерированным узлам: их нет — заголовок стоит
@@ -5760,7 +6011,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   --sw-steps-fill: 0%;
   background-image: linear-gradient(90deg,
     var(--sw-color-text, #242424) 0 var(--sw-steps-fill),
-    var(--sw-color-text-muted, #8F8F8F) var(--sw-steps-fill) 100%);
+    var(--sw-color-text-prefill, #D3D3D3) var(--sw-steps-fill) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -6108,8 +6359,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   --sw-form-cb-border: 3px;
   --sw-form-cb-border-error: 2px;
   --sw-form-field-h: clamp(56px, 4.7vw, 120px);
-  scroll-margin-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
-  margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  scroll-margin-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(4.8px, calc(1.0722vw - 3.444px), 24px));
+  margin-bottom: clamp(4.8px, calc(1.0722vw - 3.444px), 24px);
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: var(--sw-fs-3, 32px);
   line-height: var(--sw-lh-3, 1.24);
@@ -6120,7 +6371,27 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 .sw-form__container {
   max-width: 2560px;
   margin-inline: auto;
-  padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
+  padding-inline: clamp(9px, 0.8376vw + 2.556px, 24px);
+}
+
+/* ─── 1025px и выше: метрики страницы в полную величину ─── */
+/* Граница 1024/1025 стала метрической: на <1024 боковой отступ страницы, зазор
+   до следующей секции и компенсация шапки уменьшены на 40% (design_system 7).
+   Значения ≥1025 не менялись — восстанавливаются дословно. Разрыв на границе
+   сознательный, design_system 2.9 правило 5.
+   Подложка успеха и плашка отказа стоят на fixed относительно вьюпорта, их
+   отбивка от кромок экрана — та же метрика страницы. Их блок 1025 стоит НЕ
+   здесь, а после их объявлений: специфичность равна, и правило, объявленное
+   ниже по файлу, перебило бы медиазапрос, стоящий выше. */
+@media (min-width: 1025px) {
+  .sw-form {
+    scroll-margin-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+    margin-bottom: clamp(8px, calc(1.787vw - 5.74px), 40px);
+  }
+
+  .sw-form__container {
+    padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
+  }
 }
 
 /* ─── панель ─── */
@@ -6142,7 +6413,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: clamp(28px, 2.9vw, 74px) clamp(36px, 3.7vw, 95px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
 }
 
 /* ─── левая колонка ─── */
@@ -6253,7 +6524,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
-  border-radius: var(--sw-radius-2, clamp(10px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
 }
 
 /* ─── карточка формы ─── */
@@ -6266,7 +6537,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   min-width: 0;
   padding: clamp(16px, 1.55vw, 40px);
   background: var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
 }
 
 .sw-form__form {
@@ -6309,7 +6580,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: calc(var(--sw-form-field-h, 68px) * 0.36) clamp(16px, 1.64vw, 42px) 0;
   background: var(--sw-color-bg-section, #FFFFFF);
   border: var(--sw-form-border, 2px) solid transparent;
-  border-radius: var(--sw-radius-2, clamp(10px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
   color: #545454;                         /* литерал, решение пользователя */
   font-family: inherit;
   font-size: var(--sw-fs-2, 28px);
@@ -6523,7 +6794,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: clamp(20px, 1.91vw, 49px) clamp(16px, 1.2vw, 32px);
   background: var(--sw-color-cta, #242424);
   border: 0;
-  border-radius: var(--sw-radius-2, clamp(10px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
   font-size: var(--sw-fs-2, 28px);
@@ -6578,7 +6849,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   inset: 0;
   z-index: var(--sw-z-overlay, 900);
   display: flex;
-  padding: clamp(15px, 1.396vw + 4.26px, 40px);
+  padding: clamp(9px, 0.8376vw + 2.556px, 24px);
   background: var(--sw-color-bg-page, #F4F5F5);
   opacity: 0;
   transition: opacity var(--sw-dur-slow, 400ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
@@ -6598,7 +6869,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: clamp(30px, 3.9vw, 100px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(14px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
   transform: translateY(16px);
   transition: transform var(--sw-dur-slow, 400ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 }
@@ -6650,7 +6921,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: 0 clamp(24px, 2.2vw, 56px);
   background: var(--sw-color-cta, #242424);
   border: 0;
-  border-radius: var(--sw-radius-2, clamp(10px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
   font-size: var(--sw-fs-2, 28px);
@@ -6678,8 +6949,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 /* Два текста на одном узле: отказ платформы и незаполненные обязательные поля.
    Автозакрытия по таймеру нет — сообщение об ошибке не должно исчезать само.
    ≥769 правый нижний угол, ≤768 сверху под панелью GlobalHeader: на ≤768
-   панель не уезжает при скролле (SEC-2), поэтому 80px — детерминированная
-   величина, а не догадка (72px высоты панели + 8px её нижнего зазора,
+   панель не уезжает при скролле (SEC-2), поэтому 76,8px — детерминированная
+   величина, а не догадка (72px высоты панели + 4,8px её нижнего зазора,
    design_system 7). */
 .sw-form__notice[hidden] {
   display: none;
@@ -6687,8 +6958,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 
 .sw-form__notice {
   position: fixed;
-  right: clamp(15px, 1.396vw + 4.26px, 40px);
-  bottom: clamp(15px, 1.396vw + 4.26px, 40px);
+  right: clamp(9px, 0.8376vw + 2.556px, 24px);
+  bottom: clamp(9px, 0.8376vw + 2.556px, 24px);
   z-index: var(--sw-z-overlay, 900);
   display: flex;
   align-items: flex-start;
@@ -6696,7 +6967,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   max-width: 26em;
   padding: clamp(14px, 1.1vw, 28px) clamp(16px, 1.3vw, 32px);
   background: #C62F2F;                    /* литерал, статус-цветов в системе нет */
-  border-radius: var(--sw-radius-2, clamp(10px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
   box-shadow: var(--sw-shadow-lg, 0 12px 32px rgba(0,0,0,0.10));
   opacity: 0;
   transform: translateY(12px);
@@ -6751,17 +7022,32 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   height: auto;
 }
 
+/* ─── 1025px и выше: отбивка плавающих слоёв от кромок экрана ─── */
+/* Продолжение блока 1025 из начала секции — вынесено сюда, потому что оба
+   правила обязаны стоять ПОСЛЕ объявлений .sw-form__success и .sw-form__notice:
+   специфичность равна, и решает порядок в файле. */
+@media (min-width: 1025px) {
+  .sw-form__success {
+    padding: clamp(15px, 1.396vw + 4.26px, 40px);
+  }
+
+  .sw-form__notice {
+    right: clamp(15px, 1.396vw + 4.26px, 40px);
+    bottom: clamp(15px, 1.396vw + 4.26px, 40px);
+  }
+}
+
 /* ═══ КОМПАКТНОЕ СОСТОЯНИЕ — единственное перестроение композиции ═══ */
 @media (max-width: 768px) {
 
   .sw-form {
     --sw-form-field-h: clamp(52px, 7.3vw, 60px);
-    scroll-margin-top: 80px;
-    margin-bottom: 8px;
+    scroll-margin-top: 76.8px;
+    margin-bottom: 4.8px;
   }
 
   .sw-form__container {
-    padding-inline: 15px;
+    padding-inline: 9px;
   }
 
   /* Одна колонка. Левая колонка перестаёт быть колонкой: её содержимое
@@ -6857,10 +7143,10 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   /* Плашка отказа переезжает под панель GlobalHeader и растягивается
      по ширине за вычетом бокового отступа страницы. */
   .sw-form__notice {
-    top: 80px;
-    right: 15px;
+    top: 76.8px;
+    right: 9px;
     bottom: auto;
-    left: 15px;
+    left: 9px;
     max-width: none;
   }
 
@@ -7214,7 +7500,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    #sw-benefits и #sw-achievements, у которых своего scroll-margin-top нет,
    а править собранные секции нельзя. Тот же приём, что у SEC-5 и SEC-6. */
 .sw-footer {
-  --sw-footer-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+  --sw-footer-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(4.8px, calc(1.0722vw - 3.444px), 24px));
   scroll-margin-top: var(--sw-footer-top);
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: var(--sw-fs-3, 32px);
@@ -7226,7 +7512,23 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
 .sw-footer__container {
   max-width: 2560px;
   margin-inline: auto;
-  padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
+  padding-inline: clamp(9px, 0.8376vw + 2.556px, 24px);
+}
+
+/* ─── 1025px и выше: метрики страницы в полную величину ─── */
+/* Граница 1024/1025 стала метрической: на <1024 боковой отступ страницы и
+   компенсация шапки уменьшены на 40% (design_system 7). Значения ≥1025 не
+   менялись — восстанавливаются дословно. Разрыв на границе сознательный,
+   design_system 2.9 правило 5. Нижнего зазора у Footer нет: он последняя
+   секция страницы. */
+@media (min-width: 1025px) {
+  .sw-footer {
+    --sw-footer-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+  }
+
+  .sw-footer__container {
+    padding-inline: clamp(15px, 1.396vw + 4.26px, 40px);
+  }
 }
 
 /* ─── панель ─── */
@@ -7250,8 +7552,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
   border-radius:
-    var(--sw-radius-4, clamp(14px, 3.19vw, 46px))
-    var(--sw-radius-4, clamp(14px, 3.19vw, 46px))
+    var(--sw-radius-4, clamp(9px, 3.19vw, 46px))
+    var(--sw-radius-4, clamp(9px, 3.19vw, 46px))
     0 0;
 }
 
@@ -7742,9 +8044,25 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
     grid-row: auto;
   }
 
+  /* ЧИСЛО КОЛОНОК ПОДБИРАЕТСЯ САМО, БЕЗ МЕДИАЗАПРОСА. Прежние три колонки
+     auto auto auto шириной не управлялись: трек auto не уходит ниже
+     min-content, а min-content третьей группы задаёт неразрывное слово
+     «конфиденциальности». После подъёма якорей шкалы кеглей (ЗОНА A) оно
+     выросло до 161px, и в диапазоне 426–500 три колонки перестали помещаться —
+     замер на 426: требуется 392px при доступных 361, страница получала
+     горизонтальную прокрутку в 6px. Это прямое следствие правки кегля, а не
+     дефект футера: до неё три колонки проходили с запасом ~4px.
+     auto-fit с минимумом в em решает это без новой границы: 10em считаются от
+     кегля группы, поэтому порог переключения масштабируется вместе с текстом
+     и отдельной отметки в реестре 2.7 не требует. Фактически даёт две колонки
+     на 426–560 и три выше. min(100%, 10em) — предохранитель: когда контейнер
+     ýже 10em, трек не выходит за него и одна колонка остаётся рабочей.
+     Возражение из sw-catalog__list против auto-fill сюда не переносится: там
+     карточка обязана расти вместе с вьюпортом, здесь ширина колонки задана
+     содержимым и расти не должна. */
   .sw-footer__nav-group {
     display: grid;
-    grid-template-columns: auto auto auto;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10em), 1fr));
     justify-content: space-between;
     column-gap: clamp(16px, 1.5vw, 38px);
     row-gap: clamp(24px, 3.00vw, 77px);
@@ -7760,11 +8078,11 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    рядом на этой ширине не помещаются. */
 @media (max-width: 768px) {
   .sw-footer {
-    scroll-margin-top: 80px;
+    scroll-margin-top: 76.8px;
   }
 
   .sw-footer__container {
-    padding-inline: 15px;
+    padding-inline: 9px;
   }
 
   /* Переключается ТОЛЬКО горизонтальный отступ. Вертикальный идёт одним законом
@@ -8160,7 +8478,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   display: none;
   font-family: var(--sw-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   color: var(--sw-color-text, #242424);
-  scroll-margin-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(8px, calc(1.787vw - 5.74px), 40px));
+  scroll-margin-top: calc(clamp(72px, 4.355vw + 38.51px, 150px) + clamp(4.8px, calc(1.0722vw - 3.444px), 24px));
 }
 
 /* Два класса, а не один: --open переводит слой в поток, --visible запускает
@@ -8595,7 +8913,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
    (design_system 9). Закон футера дословно, ветки стыкуются в 56px. */
 @media (max-width: 768px) {
   .sw-menu {
-    scroll-margin-top: 80px;
+    scroll-margin-top: 76.8px;
   }
 
   .sw-menu__plate {
