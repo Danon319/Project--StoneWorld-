@@ -200,32 +200,36 @@
      медиазапросами по :root, и фолбэк ступенями не выражался — каждая секция
      объявляла border-radius трижды. Теперь значение непрерывно, объявление
      одно, фолбэк в var() повторяет тот же clamp дословно.
-     Закон один на всю шкалу: чистая доля вьюпорта без свободного члена
-     (design_system 2.9), потолок у всех ступеней на 1440. Полы монотонны —
-     на мобильном, где все четыре стоят на полу, шкала не переворачивается.
      Границы 1024 и 375 этим сняты: под радиус они больше не нужны, а 375
      других ролей в проекте не имела и из реестра границ ушла (2.7).
 
-     ПОЛЫ ОПУЩЕНЫ ПРАВКОЙ МОБИЛЬНОЙ АДАПТАЦИИ: 8/10/12/14 → 3/4/6/9.
-     Прежние полы срабатывали слишком рано — --sw-radius-4 замерзал уже
-     на 439px, --sw-radius-1 на 960px, — и ниже этих отметок четыре ступени
-     схлопывались в одну полосу 8…14px: крупная панель и мелкая плашка
-     получали почти одинаковый радиус, иерархия вложенности пропадала.
-     Отсюда и жалоба «на 425 и 768 скругления то слишком сильные, то слишком
-     слабые»: сильные — потому что у мелких коробок радиус застрял на полу,
-     слабые — потому что у крупных он перестал расти.
-     Новые полы пропорциональны потолкам (3/4/6/9 против 12/20/28/46), поэтому
-     шкала не переворачивается и не схлопывается. Пол --sw-radius-4 срабатывает
-     только ниже 282px, --sw-radius-1 — ниже 360px: на всех ходовых ширинах
-     телефонов шкала остаётся живой.
-     Коэффициенты и потолки НЕ ТРОНУТЫ — на десктопе не сдвинулось ничего.
+     ЗАКОН ШКАЛЫ — ЕДИНЫЙ КОЭФФИЦИЕНТ СЖАТИЯ f, ОБЩИЙ НА ВСЕ РАДИУСЫ ПРОЕКТА.
+     Значение ступени = потолок × f(вьюпорт), где f линеен по вьюпорту и имеет
+     два якоря: f(1440) = 1, f(390) = 0,62. Выше 1440 — потолок, ниже 320 —
+     пол. Отсюда 0,0361905 на единицу vw и свободный член 0,478857 от потолка.
+
+     ПОЧЕМУ НЕ ЧИСТАЯ ДОЛЯ ВЬЮПОРТА, КАК БЫЛО. Радиус был единственной
+     величиной проекта, которая на мобильном честно сжималась по вьюпорту:
+     от 1440 к 390 он падал в 3,7 раза, тогда как типографическая шкала —
+     в 1,25 раза, а тач-минимум 44px не сжимался вовсе. Коробка кнопки или
+     поля оставалась почти прежней, а её углы срезались: отношение
+     «радиус / высота» у поля формы падало с 0,30 до 0,10. Это и читалось как
+     «на мобильных скругления сильно меньше, углы острые».
+
+     СВОБОДНЫЙ ЧЛЕН ЗДЕСЬ НЕ ДЕФЕКТ, ПОТОМУ ЧТО ОН ПРОПОРЦИОНАЛЕН ПОТОЛКУ.
+     Запрет из 2.4 писался против НЕпропорционального члена (+11,69px при
+     потолке 32) — такой доминирует на узком конце и переворачивает вложенность.
+     Член вида «потолок × 0,478857» сохраняет отношение любых двух радиусов
+     постоянным на всех ширинах: панель / подложка = 0,50 и на 1440, и на 390.
+
+     ПОТОЛКИ НЕ ТРОНУТЫ — на 1440 и выше не сдвинулось ничего.
      ФОЛБЭКИ В СЕКЦИЯХ ОБЯЗАНЫ ПОВТОРЯТЬ ЭТИ ЗНАЧЕНИЯ ДОСЛОВНО. Разойдётся
      фолбэк с токеном — при отсутствии головного блока секция уедет на старый
-     пол, и ошибки в консоли не будет (design_system 3). */
-  --sw-radius-1: clamp(3px, 0.833vw, 12px);
-  --sw-radius-2: clamp(4px, 1.389vw, 20px);
-  --sw-radius-3: clamp(6px, 1.944vw, 28px);
-  --sw-radius-4: clamp(9px, 3.19vw,  46px);
+     радиус, и ошибки в консоли не будет (design_system 3). */
+  --sw-radius-1: clamp(7.14px,  calc(0.43429vw + 5.746px),  12px);
+  --sw-radius-2: clamp(11.89px, calc(0.72381vw + 9.577px),  20px);
+  --sw-radius-3: clamp(16.65px, calc(1.01333vw + 13.408px), 28px);
+  --sw-radius-4: clamp(27.36px, calc(1.66476vw + 22.027px), 46px);
   --sw-radius-pill: 999px;
 
   /* ─── тени (2.5) ─── */
@@ -554,8 +558,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
   border-radius:
     0 0
-    var(--sw-radius-4, clamp(9px, 3.19vw, 46px))
-    var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+    var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px))
+    var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
   pointer-events: auto;
   animation: sw-header-slide-in var(--sw-dur-entrance, 700ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 }
@@ -1560,7 +1564,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: 0 15px;
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 /* ─── текстовый блок ─── */
@@ -1701,7 +1705,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   height: 57px;
   margin: 0;
   padding: 0;
-  border-radius: var(--sw-radius-3, clamp(6px, 1.944vw, 28px));
+  border-radius: var(--sw-radius-3, clamp(16.65px, calc(1.01333vw + 13.408px), 28px));
   background: var(--sw-color-cta, #242424);
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-size: var(--sw-fs-2, 28px);
@@ -1751,7 +1755,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   overflow: hidden;
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 /* Соотношения сторон нет: видео и постер обрезаются по cover, размер диктует
@@ -2051,7 +2055,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 /* ─── опорный контейнер зон ─── */
@@ -2297,7 +2301,13 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   margin-top: clamp(36px, 10.8vw, 48px);
   padding: 20px 25px 20px 20px;
   border-radius: 32px;
-  border-radius: clamp(6px, 1.813cqi, 32px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f (ЗОНА A, радиусы). Опора
+     22,92px — значение cqi-ветви ровно на 1440. Ниже 1440 контейнер сжимается
+     быстрее вьюпорта, и выигрывает f-ветвь; на 1440 обе равны; выше 1440
+     cqi-ветвь больше и идёт к своему потолку 32px, как и прежде.
+     Отношение к радиусу панели держится постоянным (0,50) на всех ширинах —
+     обе величины сжимаются одним и тем же f. */
+  border-radius: max(clamp(6px, 1.813cqi, 32px), clamp(13.63px, calc(0.82955vw + 10.976px), 22.92px));
   background: var(--sw-color-bg-page, #F4F5F5);
 }
 
@@ -2358,7 +2368,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   width: 100%;
   height: 100%;
   border-radius: 28px;
-  border-radius: clamp(5px, 2.232cqi, 28px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f (ЗОНА A, радиусы).
+     Опора 19,57px — значение cqi-ветви ровно на 1440. */
+  border-radius: max(clamp(5px, 2.232cqi, 28px), clamp(11.64px, calc(0.70840vw + 9.372px), 19.57px));
   object-fit: cover;
   object-position: center;
 }
@@ -3119,7 +3131,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(20px, 4.6vw, 35px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
   transform-origin: center top;
   will-change: transform;
 }
@@ -3220,8 +3232,11 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: 0.75em 1.2em;
   /* Отступление от токена --sw-radius-pill: здесь нужен не стадион, а мягкий
      прямоугольник, решение по этой секции. Плоский клампе, не var — это не
-     токен ЗОНЫ A, а локальная величина секции. */
-  border-radius: clamp(4px, 1.1vw, 18px);
+     токен ЗОНЫ A, а локальная величина секции.
+     Вторая ветвь max() — единый коэффициент сжатия f (ЗОНА A, радиусы): она
+     поднимает радиус ниже 1440 и упирается в 15,84px — значение старой ветви
+     ровно на 1440. Выше 1440 старая ветвь больше и работает как раньше. */
+  border-radius: max(clamp(4px, 1.1vw, 18px), clamp(9.42px, calc(0.57326vw + 7.585px), 15.84px));
   background: var(--sw-color-bg-page, #F4F5F5);
   color: var(--sw-color-text-pill, #5E5E5E);
   font-weight: var(--sw-fw-regular, 400);
@@ -3370,7 +3385,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   max-width: 100%;
   min-height: 44px;
   padding: 1em 1.4em;
-  border-radius: clamp(4px, 1.1vw, 18px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f, потолок 15,84px равен
+     значению старой ветви на 1440 (ЗОНА A, радиусы). */
+  border-radius: max(clamp(4px, 1.1vw, 18px), clamp(9.42px, calc(0.57326vw + 7.585px), 15.84px));
   background: var(--sw-color-cta, #242424);
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
@@ -3407,7 +3424,11 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   position: relative;
   overflow: hidden;
   min-width: 0;
-  border-radius: clamp(4px, 2.4vw, 20px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f (ЗОНА A, радиусы). Опора
+     здесь потолок собственной формулы, 20px: правило работает только до 768,
+     значения на 1440 у него нет. На 768 старая ветвь больше и остаётся в силе,
+     поднят только узкий конец. */
+  border-radius: max(clamp(4px, 2.4vw, 20px), clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
   container-type: size;
 }
 
@@ -3572,7 +3593,12 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
      на все ширины. Прежний clamp(16px, 1.133vw, 29px) был буквальным близнецом
      формулы кнопки-якоря Hero и снят вместе с ней. */
 
-  .sw-portfolio__media { border-radius: clamp(6px, 1.1vw, 28px); }
+  /* Вторая ветвь max() — единый коэффициент сжатия f, потолок 15,84px равен
+     значению старой ветви на 1440 (ЗОНА A, радиусы). Выше 1440 старая ветвь
+     продолжает расти до 28px, как и прежде. */
+  .sw-portfolio__media {
+    border-radius: max(clamp(6px, 1.1vw, 28px), clamp(9.42px, calc(0.57326vw + 7.585px), 15.84px));
+  }
 }
 
 /* ─── hover ─── */
@@ -4105,7 +4131,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 /* ─── опорный контейнер зон ─── */
@@ -4290,7 +4316,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   margin-top: clamp(36px, 10.8vw, 48px);
   padding: clamp(14px, 1.6vw, 41px);
   border-radius: 32px;
-  border-radius: clamp(6px, 1.813cqi, 32px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f, опора 22,92px на 1440.
+     Совпадает с sw-benefits__card, как и cqi-ветвь: опорная коробка одна. */
+  border-radius: max(clamp(6px, 1.813cqi, 32px), clamp(13.63px, calc(0.82955vw + 10.976px), 22.92px));
   background: var(--sw-color-bg-page, #F4F5F5);
 }
 
@@ -4378,7 +4406,12 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
      собственной ширины карточки и правки не требует, но пол 10px срабатывал
      почти везде, кроме диапазона 426–768: на 1440 доля даёт 8,2px, на 425 —
      9,1px, и радиус фото стоял на одной величине при карточках вдвое разной
-     ширины. Пол 4px не срабатывает нигде выше вьюпорта 320. */
+     ширины. Пол 4px не срабатывает нигде выше вьюпорта 320.
+     ЕДИНЫЙ КОЭФФИЦИЕНТ СЖАТИЯ f СЮДА НЕ ДОБАВЛЕН — сознательно. f поднимает
+     радиус там, где коробка на мобильном не сжалась, а радиус сжался. У этой
+     карточки коробка постоянна по построению сетки: 294px и на 1440 (четыре
+     колонки), и на 390 (одна). Доля своей ширины и так даёт 8,2px на обоих
+     концах, ветвь max() была бы мёртвой. */
   border-radius: clamp(4px, 2.8cqi, 20px);
   text-decoration: none;
   cursor: pointer;
@@ -4434,7 +4467,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   margin: 0;
   padding: 1em 1.4em;
   border: 0;
-  border-radius: clamp(4px, 1.1vw, 18px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f, потолок 15,84px равен
+     значению старой ветви на 1440 (ЗОНА A, радиусы). */
+  border-radius: max(clamp(4px, 1.1vw, 18px), clamp(9.42px, calc(0.57326vw + 7.585px), 15.84px));
   background: var(--sw-color-cta, #242424);
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
@@ -5129,7 +5164,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 @media (min-width: 769px) {
@@ -5374,7 +5409,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   container-name: sw-card;
   margin: 0;
   padding: clamp(20px, 4.6vw, 35px);
-  border-radius: var(--sw-radius-3, clamp(6px, 1.944vw, 28px));
+  border-radius: var(--sw-radius-3, clamp(16.65px, calc(1.01333vw + 13.408px), 28px));
   background: var(--sw-color-bg-page, #F4F5F5);
 }
 
@@ -5700,7 +5735,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 @media (min-width: 769px) {
@@ -6073,7 +6108,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 @media (min-width: 769px) {
@@ -6608,7 +6643,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: clamp(28px, 2.9vw, 74px) clamp(36px, 3.7vw, 95px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 /* ─── левая колонка ─── */
@@ -6745,7 +6780,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
-  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
 }
 
 /* ─── карточка формы ─── */
@@ -6758,7 +6793,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   min-width: 0;
   padding: clamp(16px, 1.55vw, 40px);
   background: var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 .sw-form__form {
@@ -6801,7 +6836,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: calc(var(--sw-form-field-h, 68px) * 0.36) clamp(16px, 1.64vw, 42px) 0;
   background: var(--sw-color-bg-section, #FFFFFF);
   border: var(--sw-form-border, 2px) solid transparent;
-  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
   color: #545454;                         /* литерал, решение пользователя */
   font-family: inherit;
   font-size: var(--sw-fs-2, 28px);
@@ -7015,7 +7050,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: clamp(20px, 1.91vw, 49px) clamp(16px, 1.2vw, 32px);
   background: var(--sw-color-cta, #242424);
   border: 0;
-  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
   font-size: var(--sw-fs-2, 28px);
@@ -7090,7 +7125,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: clamp(30px, 3.9vw, 100px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
   transform: translateY(16px);
   transition: transform var(--sw-dur-slow, 400ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 }
@@ -7142,7 +7177,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   padding: 0 clamp(24px, 2.2vw, 56px);
   background: var(--sw-color-cta, #242424);
   border: 0;
-  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
   font-size: var(--sw-fs-2, 28px);
@@ -7188,7 +7223,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   max-width: 26em;
   padding: clamp(14px, 1.1vw, 28px) clamp(16px, 1.3vw, 32px);
   background: #C62F2F;                    /* литерал, статус-цветов в системе нет */
-  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
   box-shadow: var(--sw-shadow-lg, 0 12px 32px rgba(0,0,0,0.10));
   opacity: 0;
   transform: translateY(12px);
@@ -7796,8 +7831,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #F4F5F5); }
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
   border-radius:
-    var(--sw-radius-4, clamp(9px, 3.19vw, 46px))
-    var(--sw-radius-4, clamp(9px, 3.19vw, 46px))
+    var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px))
+    var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px))
     0 0;
 }
 
