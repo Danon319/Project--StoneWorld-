@@ -119,6 +119,42 @@
   --sw-radius-2: clamp(4px, 1.389vw, 20px);
   --sw-radius-3: clamp(6px, 1.944vw, 28px);
   --sw-radius-4: clamp(9px, 3.19vw,  46px);
+  /* ─── радиусы (2.4) ─── */
+  /* ШКАЛА ИЗ ЧЕТЫРЁХ СТУПЕНЕЙ, каждая — один clamp на все ширины.
+     Прежние sm / md / lg сняты. lg переключался ступенями 46 / 26 / 14 двумя
+     медиазапросами по :root, и фолбэк ступенями не выражался — каждая секция
+     объявляла border-radius трижды. Теперь значение непрерывно, объявление
+     одно, фолбэк в var() повторяет тот же clamp дословно.
+     Границы 1024 и 375 этим сняты: под радиус они больше не нужны, а 375
+     других ролей в проекте не имела и из реестра границ ушла (2.7).
+
+     ЗАКОН ШКАЛЫ — ЕДИНЫЙ КОЭФФИЦИЕНТ СЖАТИЯ f, ОБЩИЙ НА ВСЕ РАДИУСЫ ПРОЕКТА.
+     Значение ступени = потолок × f(вьюпорт), где f линеен по вьюпорту и имеет
+     два якоря: f(1440) = 1, f(390) = 0,62. Выше 1440 — потолок, ниже 320 —
+     пол. Отсюда 0,0361905 на единицу vw и свободный член 0,478857 от потолка.
+
+     ПОЧЕМУ НЕ ЧИСТАЯ ДОЛЯ ВЬЮПОРТА, КАК БЫЛО. Радиус был единственной
+     величиной проекта, которая на мобильном честно сжималась по вьюпорту:
+     от 1440 к 390 он падал в 3,7 раза, тогда как типографическая шкала —
+     в 1,25 раза, а тач-минимум 44px не сжимался вовсе. Коробка кнопки или
+     поля оставалась почти прежней, а её углы срезались: отношение
+     «радиус / высота» у поля формы падало с 0,30 до 0,10. Это и читалось как
+     «на мобильных скругления сильно меньше, углы острые».
+
+     СВОБОДНЫЙ ЧЛЕН ЗДЕСЬ НЕ ДЕФЕКТ, ПОТОМУ ЧТО ОН ПРОПОРЦИОНАЛЕН ПОТОЛКУ.
+     Запрет из 2.4 писался против НЕпропорционального члена (+11,69px при
+     потолке 32) — такой доминирует на узком конце и переворачивает вложенность.
+     Член вида «потолок × 0,478857» сохраняет отношение любых двух радиусов
+     постоянным на всех ширинах: панель / подложка = 0,50 и на 1440, и на 390.
+
+     ПОТОЛКИ НЕ ТРОНУТЫ — на 1440 и выше не сдвинулось ничего.
+     ФОЛБЭКИ В СЕКЦИЯХ ОБЯЗАНЫ ПОВТОРЯТЬ ЭТИ ЗНАЧЕНИЯ ДОСЛОВНО. Разойдётся
+     фолбэк с токеном — при отсутствии головного блока секция уедет на старый
+     радиус, и ошибки в консоли не будет (design_system 3). */
+  --sw-radius-1: clamp(7.14px,  calc(0.43429vw + 5.746px),  12px);
+  --sw-radius-2: clamp(11.89px, calc(0.72381vw + 9.577px),  20px);
+  --sw-radius-3: clamp(16.65px, calc(1.01333vw + 13.408px), 28px);
+  --sw-radius-4: clamp(27.36px, calc(1.66476vw + 22.027px), 46px);
   --sw-radius-pill: 999px;
 
   --sw-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
@@ -374,8 +410,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
   border-radius:
     0 0
-    var(--sw-radius-4, clamp(9px, 3.19vw, 46px))
-    var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+    var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px))
+    var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
   pointer-events: auto;
   animation: sw-header-slide-in var(--sw-dur-entrance, 700ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 }
@@ -491,6 +527,133 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   transition: color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
 }
 
+/* ─── триггер каналов связи ─── */
+/* Живёт только на 769–1024: там пилюля из четырёх плашек не помещается —
+   требует 201px при бюджете 108,7 (спецификация 1). На ≥1025 запас панели 106px,
+   пилюля стоит развёрнутой, и триггера нет вовсе.
+   Отсюда display: none в базовом правиле: включает триггер только блок
+   769–1024 ниже. На ≥1025 секция получает ровно тот же каскад, что до правки, —
+   это и есть требование «выше 1024 не меняется ничего».
+   Обёртка несёт position: relative — от неё позиционируется выпавший список.
+   Габарит триггера числом не задан и выводится из содержимого, как у пилюли:
+   padding 5 + плашка + gap 5 + каретка + padding 10. Проверка: 769 → 78,00;
+   1024 → 82,85. */
+.sw-header__channels-wrap {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+/* Кнопка, а не ссылка: триггер никуда не ведёт.
+   В покое светлая, как пилюля. В hover, focus-visible и раскрытом состоянии —
+   целиком тёмная, с белым глифом и белой кареткой. Это повторяет обращение
+   бургера: на ≤768 в правом углу тёмная кнопка, на 769–1024 — светлая пилюля,
+   темнеющая при обращении. */
+.sw-header__channels-toggle {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 5px 10px 5px 5px;
+  border: 0;
+  border-radius: var(--sw-radius-pill, 999px);
+  background: var(--sw-color-bg-page, #F4F5F5);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  transition: background-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* Круг с глифом телефона. Габарит взят у плашки канала связи той же рампой —
+   триггер обязан читаться как та же деталь, что и содержимое списка.
+   Свой класс, а не .sw-header__plate: правила hover и :active плашки к триггеру
+   не применяются, у него своё состояние по aria-expanded. */
+.sw-header__channels-glyph {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: clamp(44px, 1.452vw + 32.84px, 70px);
+  height: clamp(44px, 1.452vw + 32.84px, 70px);
+  overflow: hidden;
+  background: var(--sw-color-bg-section, #FFFFFF);
+  border-radius: 50%;
+  transition: background-color var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* Оба глифа лежат в разметке и переключаются прозрачностью: по событию
+   не подгружаются, иначе первое обращение даст пустой кадр. Тот же приём,
+   что у .sw-header__plate-icon. */
+.sw-header__channels-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(22px, 0.726vw + 16.42px, 35px);
+  height: clamp(22px, 0.726vw + 16.42px, 35px);
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  transition: opacity var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-header__channels-icon--active { opacity: 0; }
+
+/* Каретка. Анкеры 769 и 1024 — выше 1024 триггера нет. Проверка: 769 → 14,00;
+   1024 → 15,14. Потолок 16 в полосе недостижим и стоит предохранителем.
+   Поворот на 180° — указание на раскрытое состояние, помимо цвета. */
+.sw-header__channels-arrow {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: clamp(14px, 0.4471vw + 10.56px, 16px);
+  height: clamp(14px, 0.4471vw + 10.56px, 16px);
+  transition: transform var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-header__channels-arrow-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  transition: opacity var(--sw-dur-fast, 150ms) var(--sw-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.sw-header__channels-arrow-img--active { opacity: 0; }
+
+/* Раскрытое состояние. Селектор по aria-expanded, а не по классу: атрибут всё
+   равно обязан быть верным для скринридера, и второй источник правды в виде
+   класса разошёлся бы с ним молча. */
+.sw-header__channels-toggle[aria-expanded="true"] {
+  background: var(--sw-color-cta, #242424);
+}
+
+.sw-header__channels-toggle[aria-expanded="true"] .sw-header__channels-glyph {
+  background: var(--sw-color-cta, #242424);
+}
+
+.sw-header__channels-toggle[aria-expanded="true"] .sw-header__channels-icon,
+.sw-header__channels-toggle[aria-expanded="true"] .sw-header__channels-arrow-img {
+  opacity: 0;
+}
+
+.sw-header__channels-toggle[aria-expanded="true"] .sw-header__channels-icon--active,
+.sw-header__channels-toggle[aria-expanded="true"] .sw-header__channels-arrow-img--active {
+  opacity: 1;
+}
+
+.sw-header__channels-toggle[aria-expanded="true"] .sw-header__channels-arrow {
+  transform: rotate(180deg);
+}
+
+/* ─── пилюля и плашки каналов связи ─── */
+/* Габарит пилюли не задаётся числом, а выводится из padding 5 + gap 5:
+   4 плашки по 44 → 201×54 на 1025, 3 плашки по 56 → 188×66 на 2560.
+   Ниже 1025 пилюли на странице нет — она уходит в Mobile_menu вместе с меню. */
 .sw-header__pill {
   display: flex;
   align-items: center;
@@ -599,6 +762,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
 .sw-header__contact:focus-visible,
 .sw-header__callback:focus-visible,
 .sw-header__plate:focus-visible,
+.sw-header__channels-toggle:focus-visible,
 .sw-header__burger:focus-visible {
   outline: 2px solid var(--sw-color-focus, #242424);
   outline-offset: 3px;
@@ -611,6 +775,13 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   .sw-header__plate:hover::before { opacity: 1; }
   .sw-header__plate:hover .sw-header__plate-icon { opacity: 0; }
   .sw-header__plate:hover .sw-header__plate-icon--active { opacity: 1; }
+
+  .sw-header__channels-toggle:hover { background: var(--sw-color-cta, #242424); }
+  .sw-header__channels-toggle:hover .sw-header__channels-glyph { background: var(--sw-color-cta, #242424); }
+  .sw-header__channels-toggle:hover .sw-header__channels-icon,
+  .sw-header__channels-toggle:hover .sw-header__channels-arrow-img { opacity: 0; }
+  .sw-header__channels-toggle:hover .sw-header__channels-icon--active,
+  .sw-header__channels-toggle:hover .sw-header__channels-arrow-img--active { opacity: 1; }
 
   .sw-header__burger:hover { background: var(--sw-color-bg-page, #F4F5F5); }
   .sw-header__burger:hover .sw-header__burger-line { background: var(--sw-color-text, #242424); }
@@ -695,6 +866,12 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
     animation: none;
   }
 
+  .sw-header__channels-toggle,
+  .sw-header__channels-glyph,
+  .sw-header__channels-icon,
+  .sw-header__channels-arrow,
+  .sw-header__channels-arrow-img,
+  .sw-header__pill,
   .sw-header__plate::before,
   .sw-header__plate-icon,
   .sw-header__contact,
@@ -761,44 +938,77 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
         <a class="sw-header__callback" href="#sw-form">Заказать обратный звонок</a>
       </div>
 
-      <!-- С 1025; ниже уходит в Mobile_menu (SEC-14). -->
-      <div class="sw-header__pill">
-        <!-- ANL: имя цели не назначено -->
-        <a class="sw-header__plate sw-header__plate--phone" href="tel:+79649387392"
-           aria-label="Позвонить по номеру +7 964 938 73 92">
-          <img class="sw-header__plate-icon"
-               src="https://static.tildacdn.com/tild3864-6431-4566-b364-366462666633/phone_dark.svg" alt="">
-          <img class="sw-header__plate-icon sw-header__plate-icon--active"
-               src="https://static.tildacdn.com/tild3164-6564-4935-b336-656139303866/phone_white.svg" alt="">
-        </a>
+      <!-- Триггер каналов связи. Кнопка, а не ссылка: никуда не ведёт, только
+           раскрывает список. Виден только на 769–1024 — выше пилюля стоит
+           развёрнутой. Поведение — блок 5 в ЗОНЕ C.
+           Глифы декоративные (alt пустой), доступное имя даёт aria-label кнопки.
+           loading="lazy" не ставится — первый экран (NFR-4). -->
+      <div class="sw-header__channels-wrap">
+        <button type="button" class="sw-header__channels-toggle"
+                aria-expanded="false" aria-controls="sw-header-channels"
+                aria-label="Каналы связи">
+          <span class="sw-header__channels-glyph">
+            <img class="sw-header__channels-icon"
+                 src="https://static.tildacdn.com/tild3864-6431-4566-b364-366462666633/phone_dark.svg" alt="">
+            <img class="sw-header__channels-icon sw-header__channels-icon--active"
+                 src="https://static.tildacdn.com/tild3164-6564-4935-b336-656139303866/phone_white.svg" alt="">
+          </span>
+          <span class="sw-header__channels-arrow">
+            <img class="sw-header__channels-arrow-img"
+                 src="https://static.tildacdn.com/tild3530-6530-4465-a333-373633376136/Arrow_545454.svg" alt="">
+            <img class="sw-header__channels-arrow-img sw-header__channels-arrow-img--active"
+                 src="https://static.tildacdn.com/tild3166-6664-4430-b933-633063343766/Arrow_FFFFFF.svg" alt="">
+          </span>
+        </button>
 
-        <!-- ANL: имя цели не назначено -->
-        <a class="sw-header__plate sw-header__plate--max"
-           href="https://max.ru/join/Dssb1Agm0wct4o-rTod9jFze2If3DDvlooDwi95e550"
-           target="_blank" rel="noopener noreferrer" aria-label="Написать в MAX">
-          <img class="sw-header__plate-icon"
-               src="https://static.tildacdn.com/tild3132-3362-4738-b264-316533313838/max_logo_dark.svg" alt="">
-          <img class="sw-header__plate-icon sw-header__plate-icon--active"
-               src="https://static.tildacdn.com/tild6465-6263-4965-b232-373639656339/max_logo_white.svg" alt="">
-        </a>
+        <!-- Пилюля. В панели с 769. На 769–1024 свёрнута в список за триггером,
+             с 1025 стоит развёрнутой. Ниже 769 уходит в Mobile_menu (SEC-14)
+             вместе с меню. На 1025–1199 первой слева стоит плашка телефона,
+             с 1200 её место занимает текстовый номер и плашка скрывается.
+             Порядок каналов задан пользователем: телефон, MAX, VK, почта.
+             Глифы: alt пустой, доступное имя даёт aria-label ссылки.
+             loading="lazy" не ставится — первый экран (NFR-4). -->
+        <div class="sw-header__pill" id="sw-header-channels">
+          <!-- ANL: имя цели не назначено -->
+          <a class="sw-header__plate sw-header__plate--phone" href="tel:+79649387392"
+             aria-label="Позвонить по номеру +7 964 938 73 92">
+            <img class="sw-header__plate-icon"
+                 src="https://static.tildacdn.com/tild3864-6431-4566-b364-366462666633/phone_dark.svg" alt="">
+            <img class="sw-header__plate-icon sw-header__plate-icon--active"
+                 src="https://static.tildacdn.com/tild3164-6564-4935-b336-656139303866/phone_white.svg" alt="">
+          </a>
 
-        <!-- ANL: имя цели не назначено -->
-        <a class="sw-header__plate sw-header__plate--vk" href="https://vk.ru/id1118207836"
-           target="_blank" rel="noopener noreferrer" aria-label="Открыть страницу VK">
-          <img class="sw-header__plate-icon"
-               src="https://static.tildacdn.com/tild3565-6435-4861-b362-343736333331/vk_logo_dark.svg" alt="">
-          <img class="sw-header__plate-icon sw-header__plate-icon--active"
-               src="https://static.tildacdn.com/tild3631-3161-4166-a136-633330356331/vk_logo_white.svg" alt="">
-        </a>
+          <!-- ANL: имя цели не назначено -->
+          <a class="sw-header__plate sw-header__plate--max"
+             href="https://max.ru/join/Dssb1Agm0wct4o-rTod9jFze2If3DDvlooDwi95e550"
+             target="_blank" rel="noopener noreferrer" aria-label="Написать в MAX">
+            <img class="sw-header__plate-icon"
+                 src="https://static.tildacdn.com/tild3132-3362-4738-b264-316533313838/max_logo_dark.svg" alt="">
+            <img class="sw-header__plate-icon sw-header__plate-icon--active"
+                 src="https://static.tildacdn.com/tild6465-6263-4965-b232-373639656339/max_logo_white.svg" alt="">
+          </a>
 
-        <!-- ANL: имя цели не назначено -->
-        <a class="sw-header__plate sw-header__plate--mail" href="mailto:Thestoneworld@yandex.ru"
-           aria-label="Написать на почту Thestoneworld@yandex.ru">
-          <img class="sw-header__plate-icon"
-               src="https://static.tildacdn.com/tild3265-3331-4433-a434-343438356363/Yandex-mail_dark.svg" alt="">
-          <img class="sw-header__plate-icon sw-header__plate-icon--active"
-               src="https://static.tildacdn.com/tild3539-3136-4834-b538-336536333761/Yandex-mail_white.svg" alt="">
-        </a>
+          <!-- ANL: имя цели не назначено -->
+          <a class="sw-header__plate sw-header__plate--vk" href="https://vk.ru/id1118207836"
+             target="_blank" rel="noopener noreferrer" aria-label="Открыть страницу VK">
+            <img class="sw-header__plate-icon"
+                 src="https://static.tildacdn.com/tild3565-6435-4861-b362-343736333331/vk_logo_dark.svg" alt="">
+            <img class="sw-header__plate-icon sw-header__plate-icon--active"
+                 src="https://static.tildacdn.com/tild3631-3161-4166-a136-633330356331/vk_logo_white.svg" alt="">
+          </a>
+
+          <!-- Почта. target и rel не ставятся: mailto: новую вкладку не открывает,
+               схему обрабатывает почтовый клиент. Тот же случай, что у tel:
+               в плашке телефона. -->
+          <!-- ANL: имя цели не назначено -->
+          <a class="sw-header__plate sw-header__plate--mail" href="mailto:Thestoneworld@yandex.ru"
+             aria-label="Написать на почту Thestoneworld@yandex.ru">
+            <img class="sw-header__plate-icon"
+                 src="https://static.tildacdn.com/tild3265-3331-4433-a434-343438356363/Yandex-mail_dark.svg" alt="">
+            <img class="sw-header__plate-icon sw-header__plate-icon--active"
+                 src="https://static.tildacdn.com/tild3539-3136-4834-b538-336536333761/Yandex-mail_white.svg" alt="">
+          </a>
+        </div>
       </div>
     </div>
 
@@ -856,7 +1066,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding: 0 15px;
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 /* flex-basis: auto обязателен — см. распорки ниже. */
@@ -914,7 +1124,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   height: 57px;
   margin: 0;
   padding: 0;
-  border-radius: var(--sw-radius-3, clamp(6px, 1.944vw, 28px));
+  border-radius: var(--sw-radius-3, clamp(16.65px, calc(1.01333vw + 13.408px), 28px));
   background: var(--sw-color-cta, #242424);
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-size: var(--sw-fs-2, 28px);
@@ -941,7 +1151,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   overflow: hidden;
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 /* Абсолютом: в потоке высота видеофайла распёрла бы строку грида. */
@@ -1120,7 +1330,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 /* Своих отступов нет: content-box равен панели. От него три величины. */
@@ -1248,7 +1458,13 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   margin-top: clamp(36px, 10.8vw, 48px);
   padding: 20px 25px 20px 20px;
   border-radius: 32px;
-  border-radius: clamp(6px, 1.813cqi, 32px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f (ЗОНА A, радиусы). Опора
+     22,92px — значение cqi-ветви ровно на 1440. Ниже 1440 контейнер сжимается
+     быстрее вьюпорта, и выигрывает f-ветвь; на 1440 обе равны; выше 1440
+     cqi-ветвь больше и идёт к своему потолку 32px, как и прежде.
+     Отношение к радиусу панели держится постоянным (0,50) на всех ширинах —
+     обе величины сжимаются одним и тем же f. */
+  border-radius: max(clamp(6px, 1.813cqi, 32px), clamp(13.63px, calc(0.82955vw + 10.976px), 22.92px));
   background: var(--sw-color-bg-page, #F4F5F5);
 }
 
@@ -1275,7 +1491,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   width: 100%;
   height: 100%;
   border-radius: 28px;
-  border-radius: clamp(5px, 2.232cqi, 28px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f (ЗОНА A, радиусы).
+     Опора 19,57px — значение cqi-ветви ровно на 1440. */
+  border-radius: max(clamp(5px, 2.232cqi, 28px), clamp(11.64px, calc(0.70840vw + 9.372px), 19.57px));
   object-fit: cover;
   object-position: center;
 }
@@ -1758,7 +1976,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding-block: clamp(20px, 4.6vw, 35px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
   transform-origin: center top;
   will-change: transform;
 }
@@ -1816,8 +2034,13 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   align-items: center;
   column-gap: 0.5em;
   padding: 0.75em 1.2em;
-  /* Локальная величина секции, не токен. */
-  border-radius: clamp(4px, 1.1vw, 18px);
+  /* Отступление от токена --sw-radius-pill: здесь нужен не стадион, а мягкий
+     прямоугольник, решение по этой секции. Плоский клампе, не var — это не
+     токен ЗОНЫ A, а локальная величина секции.
+     Вторая ветвь max() — единый коэффициент сжатия f (ЗОНА A, радиусы): она
+     поднимает радиус ниже 1440 и упирается в 15,84px — значение старой ветви
+     ровно на 1440. Выше 1440 старая ветвь больше и работает как раньше. */
+  border-radius: max(clamp(4px, 1.1vw, 18px), clamp(9.42px, calc(0.57326vw + 7.585px), 15.84px));
   background: var(--sw-color-bg-page, #F4F5F5);
   color: var(--sw-color-text-pill, #5E5E5E);
   font-weight: var(--sw-fw-regular, 400);
@@ -1902,7 +2125,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   max-width: 100%;
   min-height: 44px;
   padding: 1em 1.4em;
-  border-radius: clamp(4px, 1.1vw, 18px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f, потолок 15,84px равен
+     значению старой ветви на 1440 (ЗОНА A, радиусы). */
+  border-radius: max(clamp(4px, 1.1vw, 18px), clamp(9.42px, calc(0.57326vw + 7.585px), 15.84px));
   background: var(--sw-color-cta, #242424);
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
@@ -1927,7 +2152,11 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   position: relative;
   overflow: hidden;
   min-width: 0;
-  border-radius: clamp(4px, 2.4vw, 20px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f (ЗОНА A, радиусы). Опора
+     здесь потолок собственной формулы, 20px: правило работает только до 768,
+     значения на 1440 у него нет. На 768 старая ветвь больше и остаётся в силе,
+     поднят только узкий конец. */
+  border-radius: max(clamp(4px, 2.4vw, 20px), clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
   container-type: size;
 }
 
@@ -2011,7 +2240,16 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
 
   .sw-portfolio__action { flex: 0 1 50%; }
 
-  .sw-portfolio__media { border-radius: clamp(6px, 1.1vw, 28px); }
+  /* Кегль кнопки здесь НЕ переопределяется: он взят ступенью --sw-fs-2, одной
+     на все ширины. Прежний clamp(16px, 1.133vw, 29px) был буквальным близнецом
+     формулы кнопки-якоря Hero и снят вместе с ней. */
+
+  /* Вторая ветвь max() — единый коэффициент сжатия f, потолок 15,84px равен
+     значению старой ветви на 1440 (ЗОНА A, радиусы). Выше 1440 старая ветвь
+     продолжает расти до 28px, как и прежде. */
+  .sw-portfolio__media {
+    border-radius: max(clamp(6px, 1.1vw, 28px), clamp(9.42px, calc(0.57326vw + 7.585px), 15.84px));
+  }
 }
 
 /* Выше правила :active, чтобы при нажатии мышью выигрывал active. */
@@ -2397,7 +2635,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 /* Своих отступов нет: content-box равен панели. */
@@ -2520,7 +2758,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   margin-top: clamp(36px, 10.8vw, 48px);
   padding: clamp(14px, 1.6vw, 41px);
   border-radius: 32px;
-  border-radius: clamp(6px, 1.813cqi, 32px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f, опора 22,92px на 1440.
+     Совпадает с sw-benefits__card, как и cqi-ветвь: опорная коробка одна. */
+  border-radius: max(clamp(6px, 1.813cqi, 32px), clamp(13.63px, calc(0.82955vw + 10.976px), 22.92px));
   background: var(--sw-color-bg-page, #F4F5F5);
 }
 
@@ -2554,6 +2794,16 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   display: block;
   overflow: hidden;
   border-radius: 20px;
+  /* Пол опущен 10 → 4px правкой мобильной адаптации. 2,8cqi — уже чистая доля
+     собственной ширины карточки и правки не требует, но пол 10px срабатывал
+     почти везде, кроме диапазона 426–768: на 1440 доля даёт 8,2px, на 425 —
+     9,1px, и радиус фото стоял на одной величине при карточках вдвое разной
+     ширины. Пол 4px не срабатывает нигде выше вьюпорта 320.
+     ЕДИНЫЙ КОЭФФИЦИЕНТ СЖАТИЯ f СЮДА НЕ ДОБАВЛЕН — сознательно. f поднимает
+     радиус там, где коробка на мобильном не сжалась, а радиус сжался. У этой
+     карточки коробка постоянна по построению сетки: 294px и на 1440 (четыре
+     колонки), и на 390 (одна). Доля своей ширины и так даёт 8,2px на обоих
+     концах, ветвь max() была бы мёртвой. */
   border-radius: clamp(4px, 2.8cqi, 20px);
   text-decoration: none;
   cursor: pointer;
@@ -2590,7 +2840,9 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   margin: 0;
   padding: 1em 1.4em;
   border: 0;
-  border-radius: clamp(4px, 1.1vw, 18px);
+  /* Вторая ветвь max() — единый коэффициент сжатия f, потолок 15,84px равен
+     значению старой ветви на 1440 (ЗОНА A, радиусы). */
+  border-radius: max(clamp(4px, 1.1vw, 18px), clamp(9.42px, calc(0.57326vw + 7.585px), 15.84px));
   background: var(--sw-color-cta, #242424);
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
@@ -3132,7 +3384,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 @media (min-width: 769px) {
@@ -3256,7 +3508,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   container-name: sw-card;
   margin: 0;
   padding: clamp(20px, 4.6vw, 35px);
-  border-radius: var(--sw-radius-3, clamp(6px, 1.944vw, 28px));
+  border-radius: var(--sw-radius-3, clamp(16.65px, calc(1.01333vw + 13.408px), 28px));
   background: var(--sw-color-bg-page, #F4F5F5);
 }
 
@@ -3448,7 +3700,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 @media (min-width: 769px) {
@@ -3699,7 +3951,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding-block: clamp(60px, 10.5vw, 81px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 @media (min-width: 769px) {
@@ -4011,7 +4263,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding: clamp(28px, 2.9vw, 74px) clamp(36px, 3.7vw, 95px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 .sw-form__intro {
@@ -4058,7 +4310,14 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   list-style: none;
 }
 
+/* container-type: inline-size — единственный контейнер запроса в секции.
+   От ширины колонки считается кегль подписи (см. ниже); заголовок и остальные
+   величины секции по-прежнему берут вьюпорт.
+   ЦЕНА КОНТЕЙНМЕНТА НАЗВАНА ПРЯМО: вклад колонки в max-content полосы
+   становится нулевым, и полоса, если её ширина не определена, схлопывается
+   в сумму зазоров. Отсюда width вместо max-width в компактном блоке. */
 .sw-form__proof-item {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: clamp(6px, 0.5vw, 14px);
@@ -4072,6 +4331,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   color: var(--sw-color-text-muted, #8F8F8F);
   font-family: var(--sw-font-family-accent, 'Jura', 'InterVar', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
   font-size: max(12px, var(--sw-fs-1, 24px));
+  font-size: max(12px, min(14cqi, var(--sw-fs-1, 24px)));
   font-weight: var(--sw-fw-medium, 500);
   line-height: var(--sw-lh-1, 1.30);
 }
@@ -4083,7 +4343,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
-  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
 }
 
 .sw-form__card {
@@ -4092,7 +4352,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   min-width: 0;
   padding: clamp(16px, 1.55vw, 40px);
   background: var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
 }
 
 .sw-form__form {
@@ -4121,7 +4381,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding: calc(var(--sw-form-field-h, 68px) * 0.36) clamp(16px, 1.64vw, 42px) 0;
   background: var(--sw-color-bg-section, #FFFFFF);
   border: var(--sw-form-border, 2px) solid transparent;
-  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
   color: #545454;                         /* литерал, решение пользователя */
   font-family: inherit;
   font-size: var(--sw-fs-2, 28px);
@@ -4281,7 +4541,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding: clamp(20px, 1.91vw, 49px) clamp(16px, 1.2vw, 32px);
   background: var(--sw-color-cta, #242424);
   border: 0;
-  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
   font-size: var(--sw-fs-2, 28px);
@@ -4342,7 +4602,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding: clamp(30px, 3.9vw, 100px);
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
-  border-radius: var(--sw-radius-4, clamp(9px, 3.19vw, 46px));
+  border-radius: var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px));
   transform: translateY(16px);
   transition: transform var(--sw-dur-slow, 400ms) var(--sw-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 }
@@ -4384,7 +4644,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   padding: 0 clamp(24px, 2.2vw, 56px);
   background: var(--sw-color-cta, #242424);
   border: 0;
-  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
   color: var(--sw-color-text-on-cta, #FFFFFF);
   font-family: inherit;
   font-size: var(--sw-fs-2, 28px);
@@ -4424,7 +4684,7 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   max-width: 26em;
   padding: clamp(14px, 1.1vw, 28px) clamp(16px, 1.3vw, 32px);
   background: #C62F2F;                    /* литерал, статус-цветов в системе нет */
-  border-radius: var(--sw-radius-2, clamp(4px, 1.389vw, 20px));
+  border-radius: var(--sw-radius-2, clamp(11.89px, calc(0.72381vw + 9.577px), 20px));
   box-shadow: var(--sw-shadow-lg, 0 12px 32px rgba(0,0,0,0.10));
   opacity: 0;
   transform: translateY(12px);
@@ -4531,9 +4791,29 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   }
 
   /* Пол 280px: на 60vw подпись ломается на три строки. */
+  /* Подпись уходит ПОД фото — порядок двух узлов, не смена родителя.
+     Полоса уже, чем панель, и отцентрована — композиция кадра 768: там она
+     занимает 463px при ширине кадра 765, то есть 60,3vw.
+     ПОЛ 280px И ПОТОЛОК 100% — оба обязательны, и оба замер, а не вкус.
+     Доля 60vw верна только у самой границы: на кадрах 425 и 320 полоса
+     занимает уже 79% и 82% ширины панели, а не 60% экрана. Продлённая вниз
+     доля даёт на 320 фото по 60px, и подпись «( подготовка )» ломается на три
+     строки — проверено в цехе. Потолок 100% страхует от переполнения: на 320
+     внутренняя ширина панели равна 287px, и пол подходит к ней вплотную.
+     ОГОВОРКА К ПОЛУ 280px: одну строку каждой подписи он держал при кегле 12px.
+     После правки мобильной шкалы кегль вырос, и держит его теперь не ширина
+     полосы, а доля колонки в кегле подписи — см. .sw-form__proof-caption.
+     WIDTH, А НЕ MAX-WIDTH, И ЭТО ДВЕ ПРИЧИНЫ СРАЗУ. Первая: вместе с
+     margin-inline: auto max-width делал полосу shrink-to-fit, и она садилась
+     на max-content подписей вместо заданной доли — на 768 фактическая ширина
+     была 311px против задокументированных здесь же 463px, фото по 96px вместо
+     146px. Композиция кадра восстановлена. Вторая: колонки объявлены
+     контейнерами запроса, их вклад в max-content равен нулю, и на прежнем
+     max-width полоса схлопывалась в сумму зазоров. */
   .sw-form__proof {
     gap: clamp(6px, 1.6vw, 12px);
-    max-width: min(100%, max(60vw, 280px));
+    width: min(100%, max(60vw, 280px));
+    max-width: none;                      /* иначе базовые 37vw режут ширину */
     margin-top: clamp(16px, 3.2vw, 26px);
     margin-bottom: clamp(16px, 3.2vw, 26px);
     margin-inline: auto;
@@ -4568,7 +4848,21 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
     font-size: max(16px, var(--sw-fs-2, 28px));
   }
 
-  /* Своя отбивка: десктопная давала кнопку ниже поля ввода. */
+  /* Отбивка блока согласий от стопки полей. Зазор в карточке один на всю форму,
+     и согласия читались продолжением стопки, а не отдельным блоком: на 390 их
+     отделяли от поля телефона те же 9px, что и поля друг от друга.
+     Величина не новая: это ровно два шага существующего gap, суммарный зазор
+     становится тройным — 24px на 320, 27px на 390, 53px на 768 (решение
+     пользователя). Своих литералов правило не заводит и на десктоп не едет:
+     там композиция принята.
+     Селектор смежности, а не класс на разметке: «последнее поле» — это
+     положение в стопке, и при перестановке полей правило переедет само. */
+  .sw-form__field + .sw-form__consent {
+    margin-top: clamp(16px, 4.6vw, 36px);
+  }
+
+  /* Своя отбивка: продлённый вниз десктопный коэффициент на 768 давал кнопку
+     ниже поля ввода, а на 320 — ниже тач-минимума. */
   .sw-form__submit {
     padding-block: clamp(17px, 2.98vw, 23px);
   }
@@ -4849,8 +5143,8 @@ body { margin: 0; background: var(--sw-color-bg-page, #e4e8ec); }
   background: var(--sw-color-bg-section, #FFFFFF);
   border: 1px solid var(--sw-color-bg-page, #F4F5F5);
   border-radius:
-    var(--sw-radius-4, clamp(9px, 3.19vw, 46px))
-    var(--sw-radius-4, clamp(9px, 3.19vw, 46px))
+    var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px))
+    var(--sw-radius-4, clamp(27.36px, calc(1.66476vw + 22.027px), 46px))
     0 0;
 }
 
